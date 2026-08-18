@@ -22,6 +22,9 @@ const CORE_FILES = [
 // Bookkeeping logs — not standards; excluded from search results.
 const SEARCH_EXCLUDE = new Set(["config/research-log.md"]);
 
+// Files above this size get a size warning prepended (token-cost guard).
+const LARGE_FILE_BYTES = 30 * 1024;
+
 // Content cache validated by mtime, so edited files are re-read.
 const fileCache = new Map();
 
@@ -65,6 +68,13 @@ async function readFileSafe(relativePath) {
   }
 }
 
+function withSizeNote(content) {
+  if (content.length > LARGE_FILE_BYTES && !content.startsWith("Error")) {
+    return `> ⚠️ Large file (~${Math.round(content.length / 1024)}KB). Consider search_standards to locate the relevant section instead of loading the whole file.\n\n${content}`;
+  }
+  return content;
+}
+
 async function listFilesRecursive(dir, base = "") {
   let results = [];
   const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -84,7 +94,7 @@ async function listFilesRecursive(dir, base = "") {
 const server = new Server(
   {
     name: "magento-spec-mcp",
-    version: "1.0.0",
+    version: "1.1.0",
   },
   {
     capabilities: {
@@ -99,7 +109,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "get_team_standards",
         description:
-          "Load Magento 2.4.8-p4 / PHP 8.3 team standards, constitution, checklist, and pattern index (Single Source of Truth - SSOT).",
+          "Load Magento 2.4.8-p5 / PHP 8.3 team standards, constitution, checklist, and pattern index (Single Source of Truth - SSOT).",
         inputSchema: {
           type: "object",
           properties: {},
@@ -132,7 +142,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "search_standards",
         description:
-          "Search for Magento standards, rules, and patterns in config/ by keyword.",
+          "Search for Magento standards, rules, patterns, and example blueprints by keyword (scans config/ and examples/).",
         inputSchema: {
           type: "object",
           properties: {
@@ -168,7 +178,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   if (name === "get_team_standards") {
-    let output = "# Magento 2.4.8-p4 / PHP 8.3 Team Standards (SSOT)\n\n";
+    let output = "# Magento 2.4.8-p5 / PHP 8.3 Team Standards (SSOT)\n\n";
     for (const rel of CORE_FILES) {
       const content = await readFileSafe(rel);
       output += `---\n## ${rel}\n\n${content}\n\n`;
@@ -219,7 +229,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     const content = await readFileSafe(fullRelPath);
     return {
-      content: [{ type: "text", text: content }],
+      content: [{ type: "text", text: withSizeNote(content) }],
+      isError: content.startsWith("Error"),
     };
   }
 
@@ -227,14 +238,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const query =
       typeof args?.query === "string" ? args.query.toLowerCase().trim() : "";
     if (!query) {
-      return { content: [{ type: "text", text: "Error: query is required" }] };
+      return {
+        content: [{ type: "text", text: "Error: query is required" }],
+        isError: true,
+      };
     }
 
-    const configDir = path.resolve(SPEC_ROOT, "config");
     let matches = [];
 
     try {
-      const files = await listFilesRecursive(configDir, "config");
+      const files = [
+        ...(await listFilesRecursive(path.resolve(SPEC_ROOT, "config"), "config")),
+        ...(await listFilesRecursive(path.resolve(SPEC_ROOT, "examples"), "examples")),
+      ];
       for (const relPath of files) {
         if (SEARCH_EXCLUDE.has(relPath)) continue;
         const content = await readFileSafe(relPath);
@@ -253,7 +269,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ? `Search results for "${query}" (${matches.length} matches):\n\n` +
             matches.slice(0, 50).join("\n") +
             (matches.length > 50 ? "\n... (truncated)" : "")
-          : `No matches found for "${query}" in config/`;
+          : `No matches found for "${query}" in config/ + examples/`;
 
       return {
         content: [{ type: "text", text: resultText }],
@@ -271,11 +287,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           { type: "text", text: "Error: path is required (e.g. config/constitution.md)" },
         ],
+        isError: true,
       };
     }
     const content = await readFileSafe(args.path);
     return {
-      content: [{ type: "text", text: content }],
+      content: [{ type: "text", text: withSizeNote(content) }],
+      isError: content.startsWith("Error"),
     };
   }
 

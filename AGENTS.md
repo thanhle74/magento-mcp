@@ -1,6 +1,6 @@
 # AGENTS.md — Magento SSOT Knowledge Base & MCP Server
 
-Magento 2.4.8-p4 / PHP 8.3 Central Reference Library. Repo này là **thư viện tri thức trung tâm (Single Source of Truth)** đi kèm **MCP Server (stdio)** để AI Agent ở bất kỳ dự án Magento nào tra cứu chuẩn kỹ thuật.
+Magento 2.4.8-p5 / PHP 8.3 Central Reference Library. Repo này là **thư viện tri thức trung tâm (Single Source of Truth)** đi kèm **MCP Server (stdio)** để AI Agent ở bất kỳ dự án Magento nào tra cứu chuẩn kỹ thuật.
 
 ## Nguyên tắc repo (bắt buộc)
 
@@ -10,7 +10,7 @@ Magento 2.4.8-p4 / PHP 8.3 Central Reference Library. Repo này là **thư việ
 
 ## Cấu trúc
 
-- `config/constitution.md` — chuẩn code PHP 8.3 / Magento 2.4.8-p4, SOLID, security, DB declarative schema.
+- `config/constitution.md` — chuẩn code PHP 8.3 / Magento 2.4.8-p5, SOLID, security, DB declarative schema.
 - `config/checklist.md` — tiêu chí Review Gate & DoD (§12).
 - `config/magento-patterns.md` — **index duy nhất** mọi pattern → link sang `config/references/`.
 - `config/references/<khu-vực>/` — reference chi tiết theo chủ đề (core, network, frontend, infrastructure, ops, security, business, inventory).
@@ -30,15 +30,10 @@ Magento 2.4.8-p4 / PHP 8.3 Central Reference Library. Repo này là **thư việ
 ## Verify MCP Server sau khi sửa `src/index.js`
 
 ```bash
-printf '%s\n' \
-'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}' \
-'{"jsonrpc":"2.0","method":"notifications/initialized"}' \
-'{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
-'{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"read_spec_file","arguments":{"path":"../escape-attempt.md"}}}' \
-| node src/index.js
+npm test
 ```
 
-Kỳ vọng: 5 tools trong `tools/list`; path escape bị chặn bằng "access denied".
+Smoke test (`scripts/smoke-test.mjs`) kiểm: 5 tools, path traversal bị chặn, `isError` khi thiếu argument, đọc file core, search phủ `config/` + `examples/`, cảnh báo size cho file lớn, listing không còn file đã gộp/xóa.
 
 ## Kiểm tra link / orphan (index discipline)
 
@@ -50,7 +45,7 @@ Mọi link `.md` trong docs phải tồn tại; mọi file trong `config/referen
 |---|---|
 | `get_team_standards` | Constitution + Checklist + Pattern index. |
 | `get_pattern_reference` | Reference chi tiết theo path (không truyền path → list tất cả). |
-| `search_standards` | Tìm keyword trong `config/`. |
+| `search_standards` | Tìm keyword trong `config/` + `examples/`. |
 | `get_review_gate` | Checklist review trước khi báo done. |
 | `read_spec_file` | Đọc file bất kỳ trong repo. |
 

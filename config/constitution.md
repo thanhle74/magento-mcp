@@ -1,11 +1,11 @@
 # Constitution - Quy tắc phát triển chung
 
-> version: 1.3.0 | last_updated: 2026-05-19  
+> version: 1.3.1 | last_updated: 2026-08-18  
 > Thuộc **thư viện trung tâm** [`config/`](README.md) — đọc cùng `checklist.md` + `magento-patterns.md` trước mọi feature spec / code.
 
 ## Thông tin project
 
-- Magento: 2.4.8-p4
+- Magento: 2.4.8-p5
 - PHP: 8.3
 - Vendor: Theo module thực tế (ví dụ: `Secomm`, `NullTraceX`)
 - Namespace gốc: `<Vendor>\<ModuleName>`
