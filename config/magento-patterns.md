@@ -125,6 +125,7 @@
 | CSP | Content Security Policy, whitelist, nonce | [security/csp.md](./references/security/csp.md) |
 | Two-Factor Authentication | 2FA provider, bypass dev, REST API token | [security/two-factor-auth.md](./references/security/two-factor-auth.md) |
 | Rate Limiting | Chống carding attack, API throttling, DDoS | [security/rate-limiting.md](./references/security/rate-limiting.md) |
+| GDPR Hard Erase | Xóa vĩnh viễn entity + media (DB-then-fs staged), audit retention non-PII, idempotent deletion, account deletion tái dùng service | [security/gdpr-hard-erase.md](./references/security/gdpr-hard-erase.md) |
 
 ### Business & Sales
 
