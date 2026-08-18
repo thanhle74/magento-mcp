@@ -148,5 +148,5 @@ Cấu trúc: `CONFIG__<SCOPE>__<PATH__COMPONENTS__JOINED__BY__DOUBLE__UNDERSCORE
 ## Liên kết
 
 - Maintenance CLI: xem [maintenance-cli.md](./maintenance-cli.md)
-- Architectural Patterns: xem [architectural-patterns.md](./architectural-patterns.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Architectural Patterns: xem [architectural-patterns.md](../core/architectural-patterns.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

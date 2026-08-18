@@ -141,4 +141,3 @@ $order = $this->orderRepository->get($incrementId);
 
 - Quy tắc chung: [constitution.md](./constitution.md)
 - Patterns: [magento-patterns.md](./magento-patterns.md)
-- Domain glossary dự án: [project-glossary.md](./project-glossary.md)

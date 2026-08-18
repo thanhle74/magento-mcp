@@ -105,6 +105,6 @@ Tắt các module `Magento_Inventory*` trong `app/etc/config.php` để quay v�
 ---
 
 ## Liên kết
-- Catalog & Search: xem [search-navigation.md](./search-navigation.md)
-- Maintenance CLI: xem [maintenance-cli.md](./maintenance-cli.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Catalog & Search: xem [search-navigation.md](../infrastructure/search-navigation.md)
+- Maintenance CLI: xem [maintenance-cli.md](../ops/maintenance-cli.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

@@ -103,7 +103,7 @@ Mọi module phải có file `composer.json` tự chứa (self-contained) để 
 
 ## Liên kết
 
-- Constitution (Quy tắc chung): xem [../constitution.md](../constitution.md)
+- Constitution (Quy tắc chung): xem [../constitution.md](../../constitution.md)
 - Declarative Schema: xem [declarative-schema.md](./declarative-schema.md)
-- Payment Gateway: xem [payment-gateway.md](./payment-gateway.md)
-- Composer series (Marketplace/Plugins/Components/Autoload): xem [composer-series.md](./composer-series.md)
+- Payment Gateway: xem [payment-gateway.md](../security/payment-gateway.md)
+- Composer series (Marketplace/Plugins/Components/Autoload): xem composer-series.md

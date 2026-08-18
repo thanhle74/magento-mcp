@@ -341,5 +341,5 @@ bin/magento catalog:product:type:list  # nếu có command này
 - Catalog Product Types: xem [catalog-product-types.md](./catalog-product-types.md)
 - Data Patch: xem [../core/data-schema-patch.md](../core/data-schema-patch.md)
 - EAV Attributes: xem [../core/attributes.md](../core/attributes.md)
-- Blueprint: xem [../../examples/integration/custom-product-type-blueprint.md](../../examples/integration/custom-product-type-blueprint.md)
+- Blueprint: xem [../../examples/integration/custom-product-type-blueprint.md](../../../examples/integration/custom-product-type-blueprint.md)
 - Quy tắc chung: xem [../../constitution.md](../../constitution.md)

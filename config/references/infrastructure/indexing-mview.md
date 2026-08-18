@@ -218,4 +218,4 @@ bin/magento indexer:reset
 - Cron Jobs: xem [cron-jobs.md](./cron-jobs.md)
 - Cache Management: xem [cache-management.md](./cache-management.md)
 - Maintenance CLI: xem [../ops/maintenance-cli.md](../ops/maintenance-cli.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

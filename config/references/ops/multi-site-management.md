@@ -74,5 +74,5 @@ $value = $this->scopeConfig->getValue(
 
 ## Liên kết
 - Configuration Management: xem [configuration-management.md](./configuration-management.md)
-- Web API (Multi-store support): xem [web-api.md](./web-api.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Web API (Multi-store support): xem [web-api.md](../network/web-api.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

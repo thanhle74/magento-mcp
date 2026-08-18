@@ -249,4 +249,4 @@ $customer = $this->customerRepository->getById($customerId);
 - Service Contracts: xem [../core/service-contracts.md](../core/service-contracts.md)
 - Security: xem [../security/security-best-practices.md](../security/security-best-practices.md)
 - Cache Management: xem [../infrastructure/cache-management.md](../infrastructure/cache-management.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

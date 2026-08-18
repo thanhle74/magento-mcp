@@ -242,5 +242,5 @@ Nguồn:
 - REST tutorials (order processing): [`rest/tutorials.md`](./rest/tutorials.md)
 - GraphQL usage/reference: [`graphql/README.md`](./graphql/README.md)
 - GraphQL App Server: [`graphql-app-server.md`](./graphql-app-server.md)
-- Service Contracts: [`service-contracts.md`](./service-contracts.md)
-- Quy tắc chung: [`../constitution.md`](../constitution.md)
+- Service Contracts: [`service-contracts.md`](../core/service-contracts.md)
+- Quy tắc chung: [`../constitution.md`](../../constitution.md)

@@ -91,4 +91,4 @@ Bạn cần khai báo `vault-method.js` để hiển thị danh sách thẻ.
 ## Liên kết
 
 - Payment Gateway: xem [payment-gateway.md](./payment-gateway.md)
-- Architectural Patterns: xem [architectural-patterns.md](./architectural-patterns.md)
+- Architectural Patterns: xem [architectural-patterns.md](../core/architectural-patterns.md)

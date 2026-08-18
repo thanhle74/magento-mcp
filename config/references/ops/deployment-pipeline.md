@@ -55,4 +55,4 @@ Sử dụng biến môi trường để ghi đè cấu hình mà không cần s�
 ## Liên kết
 - Configuration Management: xem [configuration-management.md](./configuration-management.md)
 - Maintenance CLI: xem [maintenance-cli.md](./maintenance-cli.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

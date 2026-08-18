@@ -76,6 +76,6 @@ $this->curl->post($url, $params);
 
 ## Liên kết
 
-- DI & Codegen: xem [di-codegen.md](./di-codegen.md)
+- DI & Codegen: xem [di-codegen.md](../core/object-manager-generated.md)
 - Web API: xem [web-api.md](./web-api.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

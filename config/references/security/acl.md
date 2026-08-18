@@ -177,4 +177,4 @@ Vào Admin: `System > Permissions > User Roles` → chọn role → `Role Resour
 
 - Security Best Practices: xem [security-best-practices.md](./security-best-practices.md)
 - REST API: xem [../network/rest/overview.md](../network/rest/overview.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

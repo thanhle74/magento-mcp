@@ -213,6 +213,6 @@ Khi chạy các tác vụ liên quan đến đa website/đa cửa hàng, việc 
 
 ## Liên kết
 
-- DI & Codegen: xem [di-codegen.md](./di-codegen.md)
+- DI & Codegen: xem [di-codegen.md](../core/object-manager-generated.md)
 - Web API (Async): xem [web-api.md](./web-api.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

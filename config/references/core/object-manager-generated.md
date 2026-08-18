@@ -48,6 +48,33 @@ Object Manager tạo **instance mới** mỗi lần được yêu cầu.
 
 > **Thực tế:** Hầu hết Model trong Magento là non-shared vì mỗi entity cần state độc lập. Đó là lý do phải dùng Factory thay vì inject trực tiếp Model.
 
+### Injectable vs Newable (quy tắc chọn inject hay factory)
+
+| Loại | Đặc điểm | Cách dùng |
+|------|-----------|-----------|
+| **Injectable** (Service) | Class thực hiện hành động, logic chuyên biệt. Thường **Singleton**. | **Inject trực tiếp** vào constructor. |
+| **Newable** (Data/Transient) | Class chứa dữ liệu (Model), cần thông tin runtime/DB để khởi tạo. | **KHÔNG inject trực tiếp** — bắt buộc dùng **Factory**. |
+
+### Virtual Types — biến thể class không cần file PHP mới
+
+```xml
+<!-- Tạo logger riêng cho module -->
+<virtualType name="MyModuleLogger" type="Magento\Framework\Logger\Monolog">
+    <arguments>
+        <argument name="name" xsi:type="string">my_module_log</argument>
+    </arguments>
+</virtualType>
+
+<!-- Inject logger ảo vào class thật -->
+<type name="Vendor\Module\Model\Processor">
+    <arguments>
+        <argument name="logger" xsi:type="object">MyModuleLogger</argument>
+    </arguments>
+</type>
+```
+
+> Virtual type **không thể có plugin trực tiếp** — phải plugin trên class/interface gốc.
+
 ### Scope của singleton
 
 Singleton trong Magento chỉ tồn tại trong **một PHP process** (một HTTP request hoặc một CLI command). Không có shared state giữa các request.
@@ -77,6 +104,16 @@ generated/code/Vendor/Module/Model/Product/Interceptor.php
 generated/code/Vendor/Module/Model/ProductFactory.php
 ```
 
+- **Interface Factory:** `InterfaceFactory` tự tra cứu `di.xml` preference để tạo instance của class thực thi.
+- **Truyền tham số vào `create()`:** key của array phải trùng tên biến trong constructor class đích:
+
+```php
+// Product model có tham số $data trong constructor
+$product = $this->productFactory->create([
+    'data' => ['sku' => 'test-sku', 'name' => 'Test Product']
+]);
+```
+
 **Khi nào regenerate:**
 - Thay đổi constructor signature của class được factory tạo
 - Thêm Factory mới vào di.xml
@@ -87,6 +124,16 @@ generated/code/Vendor/Module/Model/ProductFactory.php
 
 ```
 generated/code/Vendor/Module/Service/HeavyService/Proxy.php
+```
+
+Dùng khi: class gốc nặng/không phải lúc nào cũng cần (lazy-load), hoặc để phá circular dependency. Ví dụ thực tế — `StoreManagerInterface\Proxy`:
+
+```xml
+<type name="Magento\Store\Model\Resolver\Store">
+    <arguments>
+        <argument name="storeManager" xsi:type="object">Magento\Store\Model\StoreManagerInterface\Proxy</argument>
+    </arguments>
+</type>
 ```
 
 **Khi nào regenerate:**
@@ -278,8 +325,26 @@ public function execute(InputInterface $input, OutputInterface $output): int
 
 ---
 
+## 8. Deferred & Asynchronous Operations
+
+`DeferredInterface` xử lý tác vụ nặng mà không nghẽn luồng chính:
+
+- **Asynchronous:** chạy background (VD gửi HTTP request), lấy kết quả sau — dùng `AsyncClientInterface` khi gọi API ngoài.
+- **Deferred (lazy nâng cao):** gom nhiều request load lẻ tẻ thành 1 lần load duyệt — `ProxyDeferredFactory::createFor()` + `CallbackDeferred`, chỉ thực sự load khi method của entity được gọi.
+
+Dùng khi: repository phức tạp cần tối ưu query (batch load theo identity map).
+
+## 9. Object Manager — ngoại lệ được phép dùng trực tiếp
+
+Theo constitution, **KHÔNG** gọi `ObjectManager` trực tiếp trong code nghiệp vụ. Ngoại lệ:
+
+1. **Magic methods:** `__wakeup()`, `__sleep()` (nơi DI không hoạt động).
+2. **Factories & Proxies:** class có nhiệm vụ duy nhất là tạo class khác.
+3. **Integration tests:** lấy instance cho môi trường test.
+
+---
+
 ## Liên kết
 
 - Plugin patterns: xem [plugin-patterns.md](./plugin-patterns.md)
-- DI cơ bản: xem [di-codegen.md](./di-codegen.md)
 - Module sequence: xem [component-load-order](https://developer.adobe.com/commerce/php/development/build/component-load-order)

@@ -104,6 +104,6 @@ $priceVm = $block->getData('price_view_model');
 
 ## Liên kết
 
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
-- Architectural Patterns: xem [architectural-patterns.md](./architectural-patterns.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)
+- Architectural Patterns: xem [architectural-patterns.md](../core/architectural-patterns.md)
 - Layout XML: xem [layout-xml.md](./layout-xml.md)

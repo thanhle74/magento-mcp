@@ -288,5 +288,5 @@ bin/magento cache:clean
 
 - Customer Management: xem [../business/customer-management.md](../business/customer-management.md)
 - ACL: xem [../security/acl.md](../security/acl.md)
-- REST API: xem [rest/overview.md](./rest/overview.md)
+- REST API: xem [rest/overview.md](../network/rest/overview.md)
 - Quy tắc chung: xem [../../constitution.md](../../constitution.md)

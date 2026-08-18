@@ -3,7 +3,7 @@
 Áp dụng cho mọi flow "xóa vĩnh viễn dữ liệu người dùng" (right to erasure / Art. 17): xóa entity
 kèm file media, dọn PII qua nhiều module, nhưng vẫn giữ audit trail tối thiểu cho traceability.
 
-Đây là **chiều ngược** của pattern [Transaction + Side-effect Cleanup](./core/transaction-side-effect-cleanup.md)
+Đây là **chiều ngược** của pattern [Transaction + Side-effect Cleanup](../core/transaction-side-effect-cleanup.md)
 (write: file tạo trong transaction, dọn khi rollback) — erase: DB commit trước, file dọn sau.
 
 ---
@@ -250,8 +250,8 @@ vì magic `getX()` không cấu hình được trên mock.
 
 ## Liên kết
 
-- [Transaction + Side-effect Cleanup](./core/transaction-side-effect-cleanup.md) — chiều ghi
+- [Transaction + Side-effect Cleanup](../core/transaction-side-effect-cleanup.md) — chiều ghi
   (file tạo trong transaction, dọn khi rollback): cùng bài toán "DB không rollback được file",
   đặt hàng thao tác ngược nhau.
-- [Declarative Schema](./core/declarative-schema.md) — FK CASCADE + schema ownership giữa module.
-- [Observer (Event)](./core/events-observers.md) — dispatch sau commit, module boundary qua event.
+- [Declarative Schema](../core/declarative-schema.md) — FK CASCADE + schema ownership giữa module.
+- [Observer (Event)](../core/event-observer-patterns.md) — dispatch sau commit, module boundary qua event.

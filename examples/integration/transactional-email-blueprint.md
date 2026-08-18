@@ -280,4 +280,4 @@ bin/magento cache:clean
 ## Liên kết
 
 - Patterns: [config/magento-patterns.md](../../config/magento-patterns.md)
-- Events/Observers: [config/references/core/events-observers.md](../../config/references/core/events-observers.md)
+- Events/Observers: [config/references/core/events-observers.md](../../config/references/core/event-observer-patterns.md)

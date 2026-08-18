@@ -290,5 +290,5 @@ Lưu ý:
 ## Liên kết nội bộ
 
 - Testing tổng quan + Integration/Fixtures/Isolation: [testing-guide.md](./testing-guide.md)
-- DI & Codegen: [di-codegen.md](./di-codegen.md)
+- DI & Codegen: [di-codegen.md](../core/object-manager-generated.md)
 - Quy tắc chung: [../../constitution.md](../../constitution.md)

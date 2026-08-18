@@ -115,6 +115,6 @@ class HeavyService {
 
 ## Liên kết
 
-- DI & Proxy: xem [di-codegen.md](./di-codegen.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
-- Các pattern: xem [../magento-patterns.md](../magento-patterns.md)
+- DI & Proxy: xem [di-codegen.md](../core/object-manager-generated.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)
+- Các pattern: xem [../magento-patterns.md](../../magento-patterns.md)

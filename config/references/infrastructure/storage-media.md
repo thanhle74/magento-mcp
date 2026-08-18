@@ -86,6 +86,6 @@ Hệ thống sẽ tự động tạo thêm các kết nối:
 ---
 
 ## Liên kết
-- Configuration Management: xem [configuration-management.md](./configuration-management.md)
+- Configuration Management: xem [configuration-management.md](../ops/configuration-management.md)
 - Cache Management: xem [cache-management.md](./cache-management.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

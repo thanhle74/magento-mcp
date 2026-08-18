@@ -334,6 +334,6 @@ bin/magento queue:consumers:start --all
 
 ## Liên kết
 
-- Message Queues tổng quan: xem [message-queues.md](./message-queues.md)
+- Message Queues tổng quan: xem [message-queues.md](../network/message-queues.md)
 - Cron Jobs: xem [cron-jobs.md](./cron-jobs.md)
 - Quy tắc chung: xem [../../constitution.md](../../constitution.md)

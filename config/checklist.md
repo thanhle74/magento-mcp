@@ -2,13 +2,13 @@
 
 > Chi tiết rule: `constitution.md` | Chi tiết pattern: đọc reference tương ứng trong `magento-patterns.md`
 
-**Áp dụng:** Mọi module custom trong `app/code/`, mọi task implement/review — kể cả khi `features/<feature>/spec.md` **không** nhắc lại từng mục (spec feature chỉ mô tả AC nghiệp vụ; chuẩn code nằm ở đây).
+**Áp dụng:** Mọi module custom trong `app/code/`, mọi task implement/review — kể cả khi spec nghiệp vụ của dự án **không** nhắc lại từng mục (spec chỉ mô tả AC nghiệp vụ; chuẩn code nằm ở đây).
 
 ---
 
-## 0. Feature spec & review scope
+## 0. Spec & review scope
 
-- [ ] `features/<feature>/spec.md` có section **Tuân thủ chuẩn chung** (tham chiếu `constitution.md` + file này)
+- [ ] Spec nghiệp vụ của dự án có tham chiếu `constitution.md` + file này (section "Tuân thủ chuẩn chung" hoặc tương đương)
 - [ ] Review/DoD đối chiếu **toàn bộ checklist** các section liên quan — **không** chỉ tick AC trong spec feature
 - [ ] Completion report ghi rõ: `Checklist sections reviewed: <danh sách số section>`
 
@@ -101,7 +101,7 @@
 - [ ] `setup:di:compile` sau khi sửa DI
 - [ ] **PHPCS** (`Magento2` standard) trên scope module: **0 errors**
   - Warnings thiếu docblock / `@param` / `@return`: **xử lý hết** trên code custom `app/code/` (không coi “chỉ warning” là pass review)
-  - Copyright header: theo convention repo (nếu `app/code/` hiện không dùng copyright block → ghi nhận trong `spec.md` Status, không tự thêm lẻ tẻ một module)
+  - Copyright header: theo convention repo (nếu `app/code/` hiện không dùng copyright block → ghi nhận trong spec/status của dự án, không tự thêm lẻ tẻ một module)
 - [ ] Custom carrier: verify checkout method đúng điều kiện
 - [ ] Custom thay core: verify so sánh behavior
 
@@ -131,8 +131,8 @@
 - [ ] Đối chiếu **checklist này** (không chỉ AC trong spec)
 - [ ] Không còn issue **Critical/High** từ review
 - [ ] PHPCS 0 errors; docblock warnings đã xử lý (§1, §9)
-- [ ] Verify steps trong `spec.md` (section Tasks) đã chạy — ghi Pass/Fail
-- [ ] Stage/blockers cập nhật trong `spec.md` (section Status) hoặc báo cáo cuối
+- [ ] Verify steps trong spec/task contract của dự án đã chạy — ghi Pass/Fail
+- [ ] Blockers cập nhật trong spec/task contract của dự án hoặc báo cáo cuối
 
 ---
 

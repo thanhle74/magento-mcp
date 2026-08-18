@@ -7,6 +7,28 @@ Nguồn:
 
 ---
 
+## 0. Khai báo cơ bản trong di.xml
+
+```xml
+<config>
+    <type name="Magento\Catalog\Model\Product">
+        <plugin name="vendor_module_product_plugin"
+                type="Vendor\Module\Plugin\ProductPlugin"
+                sortOrder="10"
+                disabled="false" />
+    </type>
+</config>
+```
+
+| Thuộc tính | Bắt buộc | Mô tả |
+|-----------|---------|-------|
+| `name` | Có | Tên duy nhất, dùng để merge/disable |
+| `type` | Có | FQCN của plugin class |
+| `sortOrder` | Không | Thứ tự thực thi khi nhiều plugin cùng method |
+| `disabled` | Không | `true` để tắt plugin (kể cả plugin của module khác) |
+
+---
+
 ## 1. Around plugin — khi nào dùng, performance cost, callable pattern đúng
 
 ### Khi nào NÊN dùng around
@@ -230,6 +252,8 @@ class ProductRepositoryAfterPlugin
 }
 ```
 
+> **Method gốc `@return void`:** after plugin không cần return. Nếu method gốc `SomeType $obj = null` có nullable param, plugin phải khai báo đúng `= null` — thiếu sẽ fatal error khi gọi với `null`.
+
 ---
 
 ## 5. Plugin on Repository — common patterns
@@ -447,8 +471,40 @@ class DebugPlugin
 
 ---
 
+## 11. Limitations & Naming
+
+**Không thể dùng plugin với:**
+
+- `final` method hoặc `final` class
+- Non-public method (private/protected)
+- Static method
+- `__construct` và `__destruct`
+- Virtual types
+- Object khởi tạo trước khi `Magento\Framework\Interception` bootstrap
+- Class implement `Magento\Framework\ObjectManager\NoninterceptableInterface`
+
+**Naming convention:**
+
+```
+before{MethodName}  → beforeSetName
+after{MethodName}   → afterGetName
+around{MethodName}  → aroundSave
+```
+
+Nếu method bắt đầu bằng `_` (ví dụ `_construct`): `before_construct`, `around_construct`, `after_construct`.
+
+**Anti-patterns:**
+
+| Anti-pattern | Vấn đề | Giải pháp |
+|-------------|--------|----------|
+| `around` khi chỉ cần `after` | Stack trace sâu, performance | Dùng `after` |
+| `before` plugin `unset()` tham số trong array return | Lỗi runtime / GraphQL | Không unset, trả về đủ tham số |
+| Plugin trên `__construct` / private method | Không hỗ trợ | Dùng Observer hoặc refactor method thành public |
+| `<preference>` thay vì plugin | Override toàn bộ class, conflict cao | Dùng plugin |
+
+---
+
 ## Liên kết
 
-- Plugin cơ bản: xem [plugins.md](./plugins.md)
-- DI & Generated code: xem [di-codegen.md](./di-codegen.md)
-- Observer patterns: xem [events-observers.md](./events-observers.md)
+- DI & Generated code: xem [object-manager-generated.md](./object-manager-generated.md)
+- Observer patterns: xem [event-observer-patterns.md](./event-observer-patterns.md)

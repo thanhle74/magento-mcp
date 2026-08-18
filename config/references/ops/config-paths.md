@@ -109,4 +109,4 @@ Sử dụng biến môi trường hoặc `env.php` để ghi đè cấu hình Ad
 ## Liên kết
 - Configuration Management: xem [configuration-management.md](./configuration-management.md)
 - Maintenance CLI: xem [maintenance-cli.md](./maintenance-cli.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

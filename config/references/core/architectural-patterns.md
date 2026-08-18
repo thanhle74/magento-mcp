@@ -62,6 +62,6 @@ Dùng để thu thập nhiều thực thể (Objects) từ các module khác nha
 
 ## Liên kết
 
-- DI & Codegen: xem [di-codegen.md](./di-codegen.md)
+- DI & Codegen: xem [di-codegen.md](object-manager-generated.md)
 - Service Contracts: xem [service-contracts.md](./service-contracts.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

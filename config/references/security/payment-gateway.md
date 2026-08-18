@@ -351,15 +351,15 @@ Dùng `Magento\Payment\Model\Method\Adapter` qua `virtualType` — không extend
 </virtualType>
 ```
 
-> Blueprint đầy đủ: xem [examples/integration/custom-payment-offline-blueprint.md](../../examples/integration/custom-payment-offline-blueprint.md)
+> Blueprint đầy đủ: xem [examples/integration/custom-payment-offline-blueprint.md](../../../examples/integration/custom-payment-offline-blueprint.md)
 
 ---
 
 ## Liên kết
 
-- Architectural Patterns: xem [architectural-patterns.md](./architectural-patterns.md)
-- Service Contracts: xem [service-contracts.md](./service-contracts.md)
-- CLI & Maintenance: xem [maintenance-cli.md](./maintenance-cli.md)
+- Architectural Patterns: xem [architectural-patterns.md](../core/architectural-patterns.md)
+- Service Contracts: xem [service-contracts.md](../core/service-contracts.md)
+- CLI & Maintenance: xem [maintenance-cli.md](../ops/maintenance-cli.md)
 
 ---
 

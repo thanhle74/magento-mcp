@@ -56,6 +56,6 @@ Sau khi thay đổi cấu hình hoặc dữ liệu sản phẩm lớn, cần rei
 ---
 
 ## Liên kết
-- Maintenance CLI: xem [maintenance-cli.md](./maintenance-cli.md)
-- Multi-site (Index Prefix): xem [multi-site-management.md](./multi-site-management.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Maintenance CLI: xem [maintenance-cli.md](../ops/maintenance-cli.md)
+- Multi-site (Index Prefix): xem [multi-site-management.md](../ops/multi-site-management.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

@@ -1134,7 +1134,7 @@ $connection->insertOnDuplicate(
 ## Liên kết
 
 - Plugin patterns: xem [plugin-patterns.md](./plugin-patterns.md)
-- DI & Generated code: xem [di-codegen.md](./di-codegen.md)
+- DI & Generated code: xem [di-codegen.md](object-manager-generated.md)
 - Service Contracts: xem [service-contracts.md](./service-contracts.md)
 - SearchCriteria & Data Layer: xem [search-criteria-data-layer.md](./search-criteria-data-layer.md)
 

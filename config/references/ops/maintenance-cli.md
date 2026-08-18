@@ -167,5 +167,5 @@ $output->writeln('<question>Question?</question>');    // Cyan
 
 ## Liên kết
 - Configuration Management: xem [configuration-management.md](./configuration-management.md)
-- Quản lý Kho (MSI): xem [inventory-msi.md](./inventory-msi.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quản lý Kho (MSI): xem [inventory-msi.md](../inventory/inventory-msi.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

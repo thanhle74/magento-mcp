@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -18,14 +19,47 @@ const CORE_FILES = [
   "config/magento-patterns.md",
 ];
 
+// Bookkeeping logs — not standards; excluded from search results.
+const SEARCH_EXCLUDE = new Set(["config/research-log.md"]);
+
+// Content cache validated by mtime, so edited files are re-read.
+const fileCache = new Map();
+
+const ROOT_WITH_SEP = SPEC_ROOT.endsWith(path.sep)
+  ? SPEC_ROOT
+  : SPEC_ROOT + path.sep;
+
+/**
+ * Resolve a repo-relative path and guard it stays inside SPEC_ROOT.
+ * Returns the absolute path, or null when the input is invalid or escapes.
+ */
+function resolveInsideRoot(relativePath) {
+  if (typeof relativePath !== "string" || relativePath.trim() === "") {
+    return null;
+  }
+  const fullPath = path.resolve(SPEC_ROOT, relativePath);
+  if (fullPath !== SPEC_ROOT && !fullPath.startsWith(ROOT_WITH_SEP)) {
+    return null;
+  }
+  return fullPath;
+}
+
+async function readCached(fullPath) {
+  const { mtimeMs } = await fs.stat(fullPath);
+  const hit = fileCache.get(fullPath);
+  if (hit && hit.mtime === mtimeMs) return hit.content;
+  const content = await fs.readFile(fullPath, "utf-8");
+  fileCache.set(fullPath, { mtime: mtimeMs, content });
+  return content;
+}
+
 async function readFileSafe(relativePath) {
+  const fullPath = resolveInsideRoot(relativePath);
+  if (!fullPath) {
+    return `Error: access denied — path must be inside the spec repository (got: ${relativePath})`;
+  }
   try {
-    const fullPath = path.resolve(SPEC_ROOT, relativePath);
-    if (!fullPath.startsWith(SPEC_ROOT)) {
-      return `Error: Access denied (path outside SPEC_ROOT)`;
-    }
-    const content = await fs.readFile(fullPath, "utf-8");
-    return content;
+    return await readCached(fullPath);
   } catch (err) {
     return `Error reading ${relativePath}: ${err.message}`;
   }
@@ -83,14 +117,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "get_pattern_reference",
         description:
-          "Get specific Magento pattern reference doc from config/references/ (e.g. core/plugin-patterns.md, core/declarative-schema.md, etc.)",
+          "Get specific Magento pattern reference doc from config/references/ (e.g. core/plugin-patterns.md, core/declarative-schema.md). Call without path to list all available references.",
         inputSchema: {
           type: "object",
           properties: {
             path: {
               type: "string",
               description:
-                "Relative path under config/references/ (e.g. core/plugin-patterns.md)",
+                "Relative path under config/references/ (e.g. core/plugin-patterns.md). Omit to list all.",
             },
           },
         },
@@ -112,13 +146,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "read_spec_file",
-        description: "Read any specification or documentation file inside config/",
+        description:
+          "Read any markdown documentation file in this spec repository — config/, examples/, README.md, etc.",
         inputSchema: {
           type: "object",
           properties: {
             path: {
               type: "string",
-              description: "Relative file path inside spec repository",
+              description:
+                "Repo-relative file path (e.g. config/constitution.md, examples/INDEX.md)",
             },
           },
           required: ["path"],
@@ -154,7 +190,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const refPath = args?.path;
     const referencesDir = path.resolve(SPEC_ROOT, "config/references");
 
-    if (!refPath) {
+    if (typeof refPath !== "string" || refPath.trim() === "") {
       // List available references
       try {
         const files = await listFilesRecursive(referencesDir);
@@ -162,13 +198,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: "text",
-              text: `Please specify a pattern reference path. Available references in config/references/:\n\n${files.map((f) => `- ${f}`).join("\n")}`,
+              text: `Please specify a pattern reference path. Available references in config/references/:\n\n${files
+                .map((f) => `- ${f}`)
+                .join("\n")}`,
             },
           ],
         };
       } catch (err) {
         return {
-          content: [{ type: "text", text: `Error listing references: ${err.message}` }],
+          content: [
+            { type: "text", text: `Error listing references: ${err.message}` },
+          ],
         };
       }
     }
@@ -184,9 +224,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   if (name === "search_standards") {
-    const query = args?.query?.toLowerCase();
+    const query =
+      typeof args?.query === "string" ? args.query.toLowerCase().trim() : "";
     if (!query) {
-      return { content: [{ type: "text", text: "Query is required" }] };
+      return { content: [{ type: "text", text: "Error: query is required" }] };
     }
 
     const configDir = path.resolve(SPEC_ROOT, "config");
@@ -195,6 +236,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
       const files = await listFilesRecursive(configDir, "config");
       for (const relPath of files) {
+        if (SEARCH_EXCLUDE.has(relPath)) continue;
         const content = await readFileSafe(relPath);
         if (content.toLowerCase().includes(query)) {
           const lines = content.split("\n");
@@ -224,7 +266,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   if (name === "read_spec_file") {
-    const content = await readFileSafe(args?.path);
+    if (typeof args?.path !== "string" || args.path.trim() === "") {
+      return {
+        content: [
+          { type: "text", text: "Error: path is required (e.g. config/constitution.md)" },
+        ],
+      };
+    }
+    const content = await readFileSafe(args.path);
     return {
       content: [{ type: "text", text: content }],
     };

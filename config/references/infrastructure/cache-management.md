@@ -231,6 +231,6 @@ Luôn kiểm tra các Header sau để biết Cache có hoạt động hay khôn
 
 ## Liên kết
 
-- Maintenance CLI: xem [maintenance-cli.md](./maintenance-cli.md)
-- Architectural Patterns: xem [architectural-patterns.md](./architectural-patterns.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Maintenance CLI: xem [maintenance-cli.md](../ops/maintenance-cli.md)
+- Architectural Patterns: xem [architectural-patterns.md](../core/architectural-patterns.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

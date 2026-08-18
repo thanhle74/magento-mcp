@@ -156,6 +156,6 @@ if (!preg_match('/^[a-zA-Z0-9\s]+$/', $name)) {
 ## Liên kết
 
 - ACL: xem [acl.md](./acl.md)
-- Configuration Management: xem [configuration-management.md](./configuration-management.md)
-- Web API Auth: xem [web-api.md](./web-api.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Configuration Management: xem [configuration-management.md](../ops/configuration-management.md)
+- Web API Auth: xem [web-api.md](../network/web-api.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

@@ -89,6 +89,6 @@ Và file JS tương ứng sẽ lấy giá trị từ đối tượng `totals.seg
 
 ## Liên kết
 
-- Declarative Schema: xem [declarative-schema.md](./declarative-schema.md)
-- Routing & Controllers: xem [routing-controllers.md](./routing-controllers.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Declarative Schema: xem [declarative-schema.md](../core/declarative-schema.md)
+- Routing & Controllers: xem [routing-controllers.md](../core/routing-controllers.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

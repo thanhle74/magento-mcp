@@ -368,5 +368,5 @@ bin/magento cache:clean
 
 - Catalog Price Rules Reference: [config/references/business/catalog-price-rules.md](../../config/references/business/catalog-price-rules.md)
 - Quote & Totals: [config/references/business/quote-totals.md](../../config/references/business/quote-totals.md)
-- Observer/Event: [config/references/core/events-observers.md](../../config/references/core/events-observers.md)
-- Plugin: [config/references/core/plugins.md](../../config/references/core/plugins.md)
+- Observer/Event: [config/references/core/events-observers.md](../../config/references/core/event-observer-patterns.md)
+- Plugin: [config/references/core/plugins.md](../../config/references/core/plugin-patterns.md)

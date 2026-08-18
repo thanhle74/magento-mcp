@@ -227,4 +227,4 @@ $customString = $block->getCustomString();        // getData('custom_string')
 
 - ViewModel: xem [frontend-view-models.md](./frontend-view-models.md)
 - UI Components: xem [ui-components.md](./ui-components.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

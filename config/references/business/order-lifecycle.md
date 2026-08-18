@@ -281,4 +281,4 @@ $order = $this->orderRepository->get($incrementId);
 - Inventory MSI: xem [../inventory/inventory-msi.md](../inventory/inventory-msi.md)
 - Quote Totals: xem [quote-totals.md](./quote-totals.md)
 - Glossary: xem [../../glossary.md](../../glossary.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

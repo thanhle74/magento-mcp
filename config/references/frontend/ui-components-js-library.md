@@ -120,6 +120,30 @@ price.validate(); // Chạy validation
 
 ---
 
+## Bẫy runtime & checklist debug (uiClass/uiElement)
+
+`uiClass`/`uiElement` không phải class ES chuẩn — là object system Magento dựng trên RequireJS + underscore + `mageUtils`. Tránh giả định OOP truyền thống.
+
+**Bẫy lớn — object trong `defaults` bị share reference:** đặt object/observable trực tiếp trong `defaults` → nhiều instance dùng chung reference. Dấu hiệu: thay đổi component A làm component B đổi theo. Nguồn bug khó thấy trong checkout/listing nhiều component cùng kiểu.
+
+**Mapping bug → nguyên nhân:**
+
+| Triệu chứng | Kiểm tra |
+|---|---|
+| 2 UI instance ảnh hưởng lẫn nhau | Object reference trong `defaults` |
+| Component tạo được nhưng thiếu config | `initialize`/`initConfig` và `_super` |
+| Override method không như kỳ vọng | `wrapper.wrapSuper` + inheritance chain thực tế |
+| Khó trace method/data nguồn gốc | Prototype chain + module alias thật |
+
+**Checklist:**
+
+- [ ] Instance có share object reference từ `defaults` không?
+- [ ] `this` trong callback có bị bind sai context không?
+- [ ] Method đến từ object hiện tại hay parent prototype?
+- [ ] Override có gọi `_super` đúng không?
+- [ ] `initialize`/`initConfig` custom có bỏ `_super` không?
+- [ ] Dùng `_.extend` (shallow) hay `utils.extend` (deep) đúng ý chưa?
+
 ## Liên kết
 - [Kiến trúc UI Components](./ui-components.md)
 - [Cú pháp Template & Bindings](./ui-components-templates.md)

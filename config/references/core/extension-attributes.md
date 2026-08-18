@@ -238,6 +238,6 @@ Response mẫu:
 ## Liên kết
 
 - Service Contracts: xem [service-contracts.md](./service-contracts.md)
-- DI & Code Generation: xem [di-codegen.md](./di-codegen.md)
+- DI & Code Generation: xem [di-codegen.md](object-manager-generated.md)
 - REST API: xem [../network/rest/overview.md](../network/rest/overview.md)
 - Quy tắc chung: xem [../../constitution.md](../../constitution.md)

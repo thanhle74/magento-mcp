@@ -233,5 +233,5 @@ tail -f var/log/system.log | grep -i "io_event\|adobe_io"
 ## Liên kết
 
 - Message Queue: xem [message-queues.md](./message-queues.md)
-- Observer/Event: xem [../core/events-observers.md](../core/events-observers.md)
+- Observer/Event: xem [../core/events-observers.md](../core/event-observer-patterns.md)
 - Quy tắc chung: xem [../../constitution.md](../../constitution.md)

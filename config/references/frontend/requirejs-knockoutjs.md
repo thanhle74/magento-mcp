@@ -483,6 +483,21 @@ app/design/frontend/<Vendor>/<theme>/
 
 ---
 
+## Override JS core — mixins & $.widget
+
+**Mixins của Magento thực chất là module hook** (không phải mixin OOP): `config.mixins` trong `requirejs-config.js` chèn hook sau khi module target load. Hook nhận `targetModule`, mutate/return module mới.
+
+Quy tắc:
+1. Khai báo `mixins` theo **real module name** (không dùng alias).
+2. Thay đổi tối thiểu rồi return module.
+3. Ưu tiên **wrap** (`mage/utils/wrapper`, before/after) thay vì overwrite winner-take-all.
+
+**Sửa jQuery widget core (`$.widget`) an toàn:**
+
+- Dùng RequireJS mixin hook → redefine widget method qua `$.widget('ns.name', $.ns.name, {...})`, gọi `this._super()` để giữ behavior gốc.
+- **Return lại widget đã redefine** — nếu không, luồng init của Magento đứt.
+- Verify: đúng module thật (VD `mage/dropdown`) + alias; override gọi `_super()` đúng chỗ; test các page cùng dùng widget.
+
 ## Liên kết
 
 - Layout XML: xem [layout-xml.md](./layout-xml.md)

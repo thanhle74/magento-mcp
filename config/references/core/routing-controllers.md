@@ -80,7 +80,7 @@ class View implements HttpGetActionInterface
 
 ## Liên kết
 
-- DI & Codegen: xem [di-codegen.md](./di-codegen.md)
+- DI & Codegen: xem [di-codegen.md](object-manager-generated.md)
 - Service Contracts: xem [service-contracts.md](./service-contracts.md)
-- Series nền tảng PHP MVC Developers: xem [php-mvc-developer-series.md](./php-mvc-developer-series.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Series nền tảng PHP MVC Developers: xem php-mvc-developer-series.md
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

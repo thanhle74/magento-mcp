@@ -293,5 +293,5 @@ bin/magento module:uninstall --non-composer Vendor_ModuleName
 ## Liên kết
 
 - Declarative Schema: xem [declarative-schema.md](./declarative-schema.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
-- Các pattern: xem [../magento-patterns.md](../magento-patterns.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)
+- Các pattern: xem [../magento-patterns.md](../../magento-patterns.md)

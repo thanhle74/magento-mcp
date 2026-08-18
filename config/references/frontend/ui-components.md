@@ -121,6 +121,6 @@ Khi khởi tạo, `uiElement` sẽ tự động thực hiện:
 - [Cú pháp Template & Bindings](./ui-components-templates.md)
 - [PHP Modifiers (Metadata & Data Mod)](./ui-components-modifiers.md)
 - Quy tắc Magento Patterns: xem [../../magento-patterns.md](../../magento-patterns.md)
-- Web API & GraphQL: xem [../web-api.md](../web-api.md)
+- Web API & GraphQL: xem [../web-api.md](../network/web-api.md)
 - Quy tắc chung: xem [../../constitution.md](../../constitution.md)
 

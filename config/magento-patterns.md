@@ -1,6 +1,6 @@
 # Magento Patterns - Index
 
-> version: 1.2.2 | last_updated: 2026-05-26
+> version: 1.3.0 | last_updated: 2026-08-18
 >
 > File này là **index** — mỗi pattern chỉ ghi tên, khi nào dùng, và link reference chi tiết.
 > Khi implement pattern nào: **bắt buộc đọc reference tương ứng trước khi code**.
@@ -30,16 +30,13 @@
 
 | Pattern | Dùng khi | Reference |
 |---|---|---|
-| Plugin (Interceptor) | Thêm logic before/after/around method có sẵn | [core/plugins.md](./references/core/plugins.md) |
-| Plugin Patterns (thực chiến) | Around plugin, interceptor chain, sortOrder conflict, debug | [core/plugin-patterns.md](./references/core/plugin-patterns.md) |
-| Observer (Event) | React với event Magento dispatch | [core/events-observers.md](./references/core/events-observers.md) |
-| Event/Observer Patterns (thực chiến) | sales_order_place_after, catalog_product_save_after, custom event | [core/event-observer-patterns.md](./references/core/event-observer-patterns.md) |
+| Plugin (Interceptor) | Cơ bản → thực chiến: before/after/around, sortOrder, interceptor chain, limitations, debug | [core/plugin-patterns.md](./references/core/plugin-patterns.md) |
+| Observer (Event) | Cơ chế → thực chiến: per-event data, area-specific, dispatch sau commit | [core/event-observer-patterns.md](./references/core/event-observer-patterns.md) |
 | Repository + Service Contract | CRUD entity, public API của module | [core/service-contracts.md](./references/core/service-contracts.md) |
 | SearchCriteria & Data Layer | FilterGroup AND/OR, bulk ops, soft delete, transaction | [core/search-criteria-data-layer.md](./references/core/search-criteria-data-layer.md) |
 | Declarative Schema | Tạo/sửa bảng DB, **schema ownership giữa các module** | [core/declarative-schema.md](./references/core/declarative-schema.md) |
 | Data Patch | Seed dữ liệu mặc định, migration data | [core/data-schema-patch.md](./references/core/data-schema-patch.md) |
-| DI & Code Generation | Virtual type, proxy, factory, preference | [core/di-codegen.md](./references/core/di-codegen.md) |
-| Object Manager & Generated Code | Shared/non-shared, Interceptor/Factory/Proxy, area config | [core/object-manager-generated.md](./references/core/object-manager-generated.md) |
+| DI, Object Manager & Generated Code | Virtual type, injectable/newable, proxy, factory, regenerate, area config | [core/object-manager-generated.md](./references/core/object-manager-generated.md) |
 | AbstractModel & Collection | DataObject vs AbstractModel, magic getter, ResourceModel hooks | [core/model-collection-patterns.md](./references/core/model-collection-patterns.md) |
 | Advanced Patterns | Command pool, Strategy, Composite, Pipeline, PHP 8.x | [core/advanced-patterns.md](./references/core/advanced-patterns.md) |
 | Multi-file Upload Normalization | Chuẩn hóa `$_FILES` transposed → per-file descriptors (service dùng chung) | [core/upload-files-normalization.md](./references/core/upload-files-normalization.md) |
@@ -47,6 +44,8 @@
 | Debugging & Troubleshooting | 500 error, WSOD, DI compile error, plugin conflict, memory leak | [core/debugging-troubleshooting.md](./references/core/debugging-troubleshooting.md) |
 | Routing & Controllers | Tạo route frontend/adminhtml | [core/routing-controllers.md](./references/core/routing-controllers.md) |
 | Architectural Patterns | SOLID, composition, design patterns | [core/architectural-patterns.md](./references/core/architectural-patterns.md) |
+| Framework Utilities | ArrayManager, FloatComparator, `Serializer\Json`, Filesystem helpers | [core/framework-utilities.md](./references/core/framework-utilities.md) |
+| Versioning & Compatibility | SemVer module, public `@api` vs private code, dependency constraints | [core/versioning-compatibility.md](./references/core/versioning-compatibility.md) |
 | Extension Attributes | Mở rộng API Data Interface, expose qua REST | [core/extension-attributes.md](./references/core/extension-attributes.md) |
 
 ### Network & API
@@ -54,6 +53,7 @@
 | Pattern | Dùng khi | Reference |
 |---|---|---|
 | Web API (REST/SOAP) | Expose endpoint qua `webapi.xml` | [network/web-api.md](./references/network/web-api.md) |
+| REST API Guides | REST overview, B2B, Inventory, tutorials | [network/rest/overview.md](./references/network/rest/overview.md) |
 | GraphQL | Query/mutation API headless | [network/graphql/README.md](./references/network/graphql/README.md) |
 | GraphQL Schema — Attributes | Thêm field vào GraphQL schema | [network/graphql/schema-attributes.md](./references/network/graphql/schema-attributes.md) |
 | GraphQL Schema — Cart | Mở rộng cart GraphQL | [network/graphql/schema-cart.md](./references/network/graphql/schema-cart.md) |
@@ -81,6 +81,7 @@
 | LESS/CSS | Theme inheritance, _module.less, _extend.less, variables, mixins | [frontend/less-css.md](./references/frontend/less-css.md) |
 | Pager/Toolbar | Product list toolbar, sort, limit, custom sort option | [frontend/pager-toolbar.md](./references/frontend/pager-toolbar.md) |
 | Hyvä Theme | Alpine.js, Magewire, Tailwind CSS frontend | [frontend/hyva-theme.md](./references/frontend/hyva-theme.md) |
+| Luma Figma Theme | Workflow chuyển design Figma → Luma theme: tokens, BEM, QA gate, section module | [frontend/luma-figma-theme-docs-index.md](./references/frontend/luma-figma-theme-docs-index.md) |
 | Page Builder Content Type | Custom drag-and-drop content type cho PB editor | [frontend/pagebuilder-content-type.md](./references/frontend/pagebuilder-content-type.md) |
 | Widget | Reusable CMS component cấu hình từ Admin | [frontend/widget.md](./references/frontend/widget.md) |
 
@@ -106,6 +107,8 @@
 | Configuration Management | Scope, deploy config | [ops/configuration-management.md](./references/ops/configuration-management.md) |
 | Deployment Pipeline | Deploy flow, setup commands | [ops/deployment-pipeline.md](./references/ops/deployment-pipeline.md) |
 | Unit Testing | PHPUnit, mock, test structure, mock repository/service | [ops/unit-testing.md](./references/ops/unit-testing.md) |
+| Testing Guide (tổng quan) | Chiến lược test Magento: unit/integration/functional, annotations | [ops/testing-guide.md](./references/ops/testing-guide.md) |
+| MFTF Functional Testing | Functional/UI test với MFTF, merge order, vs Codeception | [ops/mftf-functional-testing.md](./references/ops/mftf-functional-testing.md) |
 | Static Analysis | PHPCS, PHPStan, PHP CS Fixer, GrumPHP | [ops/static-analysis.md](./references/ops/static-analysis.md) |
 | Tooling | Pestle, n98-magerun2, PHPStorm plugin, Makefile | [ops/tooling.md](./references/ops/tooling.md) |
 | Docker/DDEV | DDEV setup, markshust/docker-magento, CI/CD GitHub Actions | [ops/docker-ddev.md](./references/ops/docker-ddev.md) |
@@ -141,6 +144,7 @@
 | Catalog Price, Cart Rules & Tax | Price waterfall, custom price modifier, tier price, cart rule, FPT | [business/catalog-price-rules.md](./references/business/catalog-price-rules.md) |
 | Reporting | Advanced reporting, grid report | [business/advanced-reporting.md](./references/business/advanced-reporting.md) |
 | B2B Modules | Company, shared catalog, negotiable quote, purchase order | [ops/b2b-modules.md](./references/ops/b2b-modules.md) |
+| Payment Integration — Laybyland (project) | Gotchas tích hợp payment thực tế (Laybyland/PaySquad) | [business/laybyland-payment-integration.md](./references/business/laybyland-payment-integration.md) |
 
 ---
 

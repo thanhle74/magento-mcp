@@ -142,6 +142,6 @@ Cron log mặc định: `var/log/cron.log`
 ---
 
 ## Liên kết
-- Maintenance CLI: xem [maintenance-cli.md](./maintenance-cli.md)
+- Maintenance CLI: xem [maintenance-cli.md](../ops/maintenance-cli.md)
 - Indexer & Mview: xem [indexing-mview.md](./indexing-mview.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

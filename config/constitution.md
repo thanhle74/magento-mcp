@@ -26,7 +26,7 @@
   - **Luôn đầy đủ**: class docblock; constructor `@param`; Controller, Plugin, Observer, Service, Webapi facade, GraphQL Resolver, UI Component PHP
   - **`@inheritdoc` được phép**: method public/protected của Model/Repository **chỉ** implement method đã có docblock trên `Api/` interface tương ứng
   - **Api folder**: `@api`, `@since`, `@param`/`@return` FQCN (§4)
-- Feature `spec.md` **không** miễn trừ các rule trên — chỉ mô tả AC nghiệp vụ; chi tiết kiểm tra tại `checklist.md`
+- Spec nghiệp vụ của dự án **không** miễn trừ các rule trên — spec chỉ mô tả AC nghiệp vụ; chi tiết kiểm tra tại `checklist.md`
 
 ### Nguyên tắc thiết kế (Technical Guidelines)
 
@@ -235,9 +235,10 @@ Task chỉ được xem là hoàn thành khi đạt đủ:
 
 ## 15. Proactive Analysis & Advisory (bắt buộc)
 
-> Quy tắc đầy đủ: xem `AGENTS.md` — mục "Hành vi chủ động".
-
-Tóm tắt: phân tích độc lập, nêu rõ requirement understanding + risks + options trước khi code, cảnh báo rủi ro, hỏi lại khi thiếu thông tin, đề xuất next best action sau mỗi bước lớn.
+- Trước khi code: nêu rõ hiểu biết requirement (requirement understanding), rủi ro thấy trước, và các phương án (nếu có nhiều cách làm).
+- Chủ động cảnh báo rủi ro / edge case, không chờ được hỏi.
+- Thiếu thông tin để quyết định → hỏi lại, không tự đoán.
+- Sau mỗi bước lớn: đề xuất next best action tiếp theo.
 
 ## 16. Payment Method — Quy tắc riêng
 

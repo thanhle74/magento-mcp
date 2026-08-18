@@ -220,4 +220,4 @@ foreach ($this->storeManager->getStores() as $store) {
 - Config Paths: xem [config-paths.md](./config-paths.md)
 - Configuration Management: xem [configuration-management.md](./configuration-management.md)
 - Multi-site Management: xem [multi-site-management.md](./multi-site-management.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

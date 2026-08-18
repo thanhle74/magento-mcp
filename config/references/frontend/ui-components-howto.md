@@ -112,6 +112,30 @@ Ví dụ: `ko.contextFor($0).$data` — truy cập view model field (vd. `name` 
 - Kiến trúc tổng quan: [ui-components.md](./ui-components.md)
 - Thư viện component: [ui-component-library.md](./ui-component-library.md)
 - JavaScript init scripts (`x-magento-init`, `data-mage-init`): [javascript-init-scripts.md](./javascript-init-scripts.md)
-- Advanced JS series (KO + mixins + widget override): [advanced-javascript-series.md](./advanced-javascript-series.md)
-- UI Components full series (13 bài Alan Storm): [ui-components-series.md](./ui-components-series.md)
-- Frontend strategy series (React/PWA/UPWARD/Hyva): [magento-frontend-2020-series.md](./magento-frontend-2020-series.md)
+
+---
+
+## Debug UI Component — trace 4 lớp + checklist
+
+UI Component là hệ thống **4 lớp**; khi lỗi thường phải trace xuyên suốt thay vì chỉ nhìn 1 file XML:
+
+1. **PHP side:** XML DSL (`ui_component/*.xml`) + class component + data provider
+2. **Render side:** `x-magento-init` bơm JSON vào `Magento_Ui/js/core/app`
+3. **JS side:** `layout.js` load RequireJS components, tạo view model, đăng ký vào `uiRegistry`
+4. **KO side:** `scope` binding + template rendering
+
+**Trace path khi không render:**
+`layout handle → ui_component xml → x-magento-init → component module → uiRegistry → KO template`
+
+**Checklist debug nhanh:**
+
+- [ ] Component có mặt trong `x-magento-init` chưa?
+- [ ] RequireJS module (`component`) load thành công chưa?
+- [ ] Component instance đã có trong `uiRegistry` chưa?
+- [ ] `defaults/config/imports/exports` sau merge có đúng không?
+- [ ] `dataSource` có data `items`/`totalRecords` đúng không?
+- [ ] KO scope có trỏ đúng tên component không?
+- [ ] Template path có đúng module + area + static content không?
+- [ ] Có custom mixin/wrapper nào đang override module gốc không?
+
+> Chiến lược áp dụng: Admin CRUD dùng pattern core UI Components; frontend đơn giản dùng block/template + JS init gọn; chỉ dùng UI Component XML cho frontend phức tạp (checkout-like) khi team đủ khả năng debug `uiRegistry` + KO stack.

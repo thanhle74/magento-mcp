@@ -80,5 +80,5 @@ $url = $this->urlBuilder->getUrl('sales/order/view', ['order_id' => 1]);
 
 ## Liên kết
 
-- MSI & Kho hàng: xem [inventory-msi.md](./inventory-msi.md)
+- MSI & Kho hàng: xem [inventory-msi.md](../inventory/inventory-msi.md)
 - Architectural Patterns: xem [architectural-patterns.md](./architectural-patterns.md)

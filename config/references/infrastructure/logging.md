@@ -88,6 +88,6 @@ class Processor {
 ---
 
 ## Liên kết
-- DI & Codegen: xem [di-codegen.md](./di-codegen.md)
-- Maintenance CLI: xem [maintenance-cli.md](./maintenance-cli.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- DI & Codegen: xem [di-codegen.md](../core/object-manager-generated.md)
+- Maintenance CLI: xem [maintenance-cli.md](../ops/maintenance-cli.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

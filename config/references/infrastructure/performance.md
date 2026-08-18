@@ -273,4 +273,4 @@ opcache.revalidate_freq=0
 - Cache Management: xem [cache-management.md](./cache-management.md)
 - Indexer/Mview: xem [indexing-mview.md](./indexing-mview.md)
 - Message Queue: xem [../network/message-queues.md](../network/message-queues.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

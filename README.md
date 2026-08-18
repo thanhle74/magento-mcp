@@ -6,32 +6,41 @@ Repo này **không chứa quy trình hay quản lý task/feature**. Bạn có th
 
 ---
 
-## 📌 Cấu trúc Nguồn sự thật (`config/`)
+## 📌 Cấu trúc
 
-- `config/constitution.md` — Chuẩn kỹ thuật PHP 8.3 & Magento core.
-- `config/checklist.md` — Tiêu chí Review Gate & DoD.
-- `config/magento-patterns.md` — Bản đồ thiết kế (Plugin, Event, GraphQL, REST, Admin...).
-- `config/references/` — Hướng dẫn mẫu code chi tiết cho từng component.
+- `config/` — Nguồn sự thật:
+  - `constitution.md` — Chuẩn kỹ thuật PHP 8.3 & Magento core.
+  - `checklist.md` — Tiêu chí Review Gate & DoD.
+  - `magento-patterns.md` — Bản đồ thiết kế (Plugin, Event, GraphQL, REST, Admin...).
+  - `references/` — Hướng dẫn mẫu code chi tiết cho từng component.
+  - `glossary.md` — Thuật ngữ Magento core.
+- `examples/` — Blueprint mã mẫu theo chủ đề (vào `examples/INDEX.md` để chọn).
+- `src/index.js` — MCP Server (stdio).
 
 ---
 
 ## ⚡ Cấu hình kết nối MCP Server
 
-Thêm đoạn cấu hình sau vào Antigravity (`~/.gemini/antigravity/mcp_config.json`) hoặc Cursor (`~/.cursor/mcp.json`) ở bất kỳ máy / workspace nào:
+**Claude Code** (khuyến nghị scope `user` để available ở mọi project):
+
+```bash
+claude mcp add magento-spec -s user -- node /path/to/spec/src/index.js
+```
+
+**Cursor** (`~/.cursor/mcp.json`), **Antigravity** (`~/.gemini/antigravity/mcp_config.json`) và các client khác:
 
 ```json
 {
   "mcpServers": {
     "magento-spec": {
       "command": "node",
-      "args": ["/home/thanhle/Sites/spec/src/index.js"],
-      "env": {
-        "SPEC_ROOT": "/home/thanhle/Sites/spec"
-      }
+      "args": ["/path/to/spec/src/index.js"]
     }
   }
 }
 ```
+
+> `SPEC_ROOT` (env) là tùy chọn — mặc định server tự lấy thư mục gốc của repo. Chỉ set khi bạn đặt repo ở nơi khác và muốn ghi đè.
 
 ---
 
@@ -40,7 +49,15 @@ Thêm đoạn cấu hình sau vào Antigravity (`~/.gemini/antigravity/mcp_confi
 | Tool | Mô tả |
 |---|---|
 | `get_team_standards` | Nạp nhanh Constitution, Checklist & Pattern index. |
-| `get_pattern_reference` | Lấy chi tiết mẫu code theo tên (VD: `core/plugin-patterns.md`). |
+| `get_pattern_reference` | Lấy chi tiết mẫu code theo tên (VD: `core/plugin-patterns.md`). Không truyền path → list tất cả references. |
 | `search_standards` | Tìm kiếm chuẩn/quy tắc theo từ khóa trong `config/`. |
 | `get_review_gate` | Nạp checklist kiểm tra chất lượng code trước khi hoàn thành. |
-| `read_spec_file` | Đọc bất kỳ file tài liệu nào trong thư viện spec. |
+| `read_spec_file` | Đọc bất kỳ file tài liệu nào trong repo (`config/`, `examples/`, ...). |
+
+---
+
+## 🔄 Quy trình khuyến nghị cho AI Agent
+
+1. **Trước code:** `get_team_standards` → nạp Constitution + Checklist + Pattern index.
+2. **Khi implement:** `get_pattern_reference` / `search_standards` / `read_spec_file` để tra cứu pattern — không đoán từ memory.
+3. **Trước khi báo done:** `get_review_gate` → qua §12 Review Gate trong `checklist.md`.

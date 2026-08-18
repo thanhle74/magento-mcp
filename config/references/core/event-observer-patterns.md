@@ -428,8 +428,88 @@ class SyncOrderToExternalApiObserver implements ObserverInterface
 
 ---
 
+## 12. Area-specific events.xml — giới hạn phạm vi Observer
+
+Đặt `events.xml` vào đúng thư mục để Observer không chạy ở area không cần thiết (performance).
+
+| Vị trí file | Area áp dụng |
+|-------------|-------------|
+| `etc/events.xml` | **Global** — mọi area (frontend, adminhtml, cron, REST, GraphQL) |
+| `etc/frontend/events.xml` | Chỉ frontend storefront |
+| `etc/adminhtml/events.xml` | Chỉ Admin panel |
+| `etc/webapi_rest/events.xml` | Chỉ REST API |
+| `etc/webapi_soap/events.xml` | Chỉ SOAP API |
+| `etc/graphql/events.xml` | Chỉ GraphQL |
+| `etc/crontab/events.xml` | Chỉ cron jobs |
+
+**Khuyến nghị:** luôn đặt Observer vào area cụ thể nhất có thể (VD: gửi email sau order đặt từ storefront → `etc/frontend/events.xml`).
+
+## 13. Quy tắc chung
+
+- **Thứ tự Observer KHÔNG kiểm soát được** — khác Plugin (có `sortOrder`). Cần đảm bảo thứ tự → dùng Plugin.
+- **Disable observer của module khác:**
+  ```xml
+  <event name="my_module_event_before">
+      <observer name="myObserverName" disabled="true" />
+  </event>
+  ```
+- **Shared instance:** Observer mặc định shared (`shared="true"`) — cùng 1 instance dùng lại mọi lần dispatch. Cần instance mới mỗi lần → `shared="false"` trong `events.xml`.
+- **Stateless:** Observer phải stateless để tương thích App Server.
+- **Cyclical loop:** không dispatch event mà chính Observer đó đang lắng nghe → vòng lặp vô hạn.
+- **Tên observer** phải duy nhất toàn hệ thống (tránh XML merge node không mong muốn).
+- **Sự kiện phổ biến khác** (tra cứu): `checkout_cart_save_after`, `checkout_onepage_controller_success_action`, `customer_logout`, `customer_register_success`, `customer_save_after`, `catalog_category_save_after`, `catalog_product_import_finish_before`, `controller_action_postdispatch`. Danh sách đầy đủ: [Official Event List](https://developer.adobe.com/commerce/php/development/components/events-and-observers/event-list)
+
+## 14. Event trong DB transaction — dispatch SAU commit
+
+Repository `save()` thường dispatch `<entity>_save_after` **ngay tại chỗ**. Nếu gọi repository save
+bên trong transaction đang mở của service, có 2 lỗi tiềm ẩn:
+
+1. **Observer thấy state chưa commit** — observer đọc DB từ connection khác hoặc gọi API ngoài
+   sẽ thấy dữ liệu chưa tồn tại / bị rollback ngay sau đó.
+2. **Observer throw sau commit → rollBack một transaction đã commit** — nếu dispatch nằm trong
+   `try` cùng câu `commit()`, exception từ observer rơi vào `catch` gọi `rollBack()` trên txn đã
+   kết thúc: state change THỰC SỰ đã commit nhưng caller nhận exception "failed".
+
+### Khung chuẩn
+
+```php
+$connection->beginTransaction();
+try {
+    // Save qua RESOURCE MODEL trong transaction — repository sẽ dispatch
+    // entity_save_after ngay tại chỗ (trong txn), không dùng ở đây.
+    $this->entityResource->save($entity);
+    // ... các write khác trong cùng txn ...
+    $connection->commit();
+} catch (\Exception $exception) {
+    $connection->rollBack();
+    throw new LocalizedException(__('...'), $exception);
+}
+
+// Post-commit: NGOÀI try/catch — exception từ observer phải không bao giờ
+// kích hoạt rollBack của txn đã commit. Payload GIỐNG HỆT repository save()
+// để observer contract không đổi (is_new = false cho update).
+$this->eventManager->dispatch('<module>_entity_save_after', [
+    'entity'  => $entity,
+    'is_new'  => false,
+]);
+```
+
+Quy tắc:
+- Mọi event **external-facing** (observer của module khác subscribe) dispatch sau commit.
+- Dispatch sau commit đặt NGOÀI try/catch — exception observer propagate thẳng, không wrap,
+  không rollBack.
+- Payload giữ nguyên hình dạng mà repository đã gửi — observer hiện có không cần sửa.
+- Event chỉ consumed nội bộ module thì ít ràng buộc hơn, nhưng nên theo pattern này cho đồng nhất.
+
+### Kiểm thử
+
+Assert THỨ TỰ qua recorder dùng chung: `['commit', '<module>_entity_save_after']` — và test
+riêng: observer throw sau commit → KHÔNG gọi rollBack, exception propagate raw.
+
+---
+
 ## Liên kết
 
-- Events & Observers cơ bản: xem [events-observers.md](./events-observers.md)
 - Message Queue: xem [../network/message-queues.md](../network/message-queues.md)
 - Plugin patterns: xem [plugin-patterns.md](./plugin-patterns.md)
+- Transaction + side-effect cleanup: xem [transaction-side-effect-cleanup.md](./transaction-side-effect-cleanup.md)

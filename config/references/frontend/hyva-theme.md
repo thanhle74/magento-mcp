@@ -199,6 +199,42 @@ Vendor/ModuleHyva/
 
 ---
 
+## Form key FPC-safe — hyva.getFormKey()
+
+POST về Magento (add-to-cart, form frontend…) bắt buộc `form_key` hợp lệ của **session hiện tại**.
+Trên trang cache FPC (full page cache), KHÔNG BAO GIỜ render form_key phía server: trang cache
+được phục vụ cho nhiều visitor — key của một session bị ship cho mọi người, và session khác thì key
+không khớp → reject. Đừng đọc từ DOM input (`document.querySelector('input[name="form_key"]')`)
+— input đó có thể không tồn tại hoặc chứa key stale của người render trang.
+
+Theme module Hyvä (`hyva-themes/magento2-theme-module`, file `page/js/hyva.phtml`) định nghĩa
+`hyva.getFormKey()` trên mọi trang frontend: **đọc (hoặc sinh) `form_key` cookie client-side,
+đồng bộ** — luôn đúng cho visitor hiện tại, kể cả trên trang cache. Đây là API chuẩn thay cho
+mọi DOM/Luma assumption cũ:
+
+```js
+// Trong Alpine component
+getFormKey() {
+    return (window.hyva && typeof hyva.getFormKey === 'function') ? hyva.getFormKey() : '';
+}
+```
+
+```html
+<!-- Trong form HTML tĩnh (không cần component riêng) — Alpine xử lý x-init
+     trên mọi element có directive, không cần x-data bao quanh -->
+<input type="hidden" name="form_key" value=""
+       x-init="$el.value = (window.hyva && typeof hyva.getFormKey === 'function')
+           ? hyva.getFormKey() : $el.value" />
+```
+
+Quy tắc:
+- ViewModel KHÔNG inject `Magento\Framework\Data\Form\FormKey` để render key vào template cacheable.
+- Luôn guard `window.hyva && typeof hyva.getFormKey === 'function'` (fallback chuỗi rỗng) —
+  template vẫn render được ngoài context Hyvä (preview, test).
+- Không introduce RequireJS/jQuery/Knockout để lấy key — cookie API của theme module là đủ.
+
+---
+
 ## Lưu ý quan trọng
 
 - Hyvä **không dùng** `requirejs-config.js` — JS khai báo trực tiếp trong template hoặc `<script>` tag
@@ -213,4 +249,4 @@ Vendor/ModuleHyva/
 
 - Layout XML: xem [layout-xml.md](./layout-xml.md)
 - ViewModel: xem [frontend-view-models.md](./frontend-view-models.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

@@ -257,4 +257,4 @@ class AddCustomProductAttribute implements DataPatchInterface
 - Inventory MSI: xem [../inventory/inventory-msi.md](../inventory/inventory-msi.md)
 - Catalog Price Rules: xem [catalog-price-rules.md](./catalog-price-rules.md)
 - Data Patch: xem [../core/data-schema-patch.md](../core/data-schema-patch.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)

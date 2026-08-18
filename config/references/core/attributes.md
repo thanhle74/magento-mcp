@@ -204,6 +204,6 @@ class OrderRepositoryPlugin
 ## Liên kết
 
 - Data/Schema Patch: xem [data-schema-patch.md](./data-schema-patch.md)
-- Plugin: xem [plugins.md](./plugins.md)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
-- Các pattern: xem [../magento-patterns.md](../magento-patterns.md)
+- Plugin: xem [plugins.md](plugin-patterns.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)
+- Các pattern: xem [../magento-patterns.md](../../magento-patterns.md)

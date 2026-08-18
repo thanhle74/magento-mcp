@@ -67,6 +67,6 @@ Chỉ định báo cáo nào sẽ được xuất ra file để đồng bộ.
 ---
 
 ## Liên kết
-- Web API: xem [web-api.md](./web-api.md)
+- Web API: xem [web-api.md](../network/web-api.md)
 - Cron Jobs: (Sẽ bổ sung nếu cần)
-- Quy tắc chung: xem [../constitution.md](../constitution.md)
+- Quy tắc chung: xem [../constitution.md](../../constitution.md)
