@@ -144,6 +144,87 @@ $collection->addFieldToFilter('status', 'active');
 $filtered = $collection->getItems();
 ```
 
+### Bounded keyset batching cho job xóa/xử lý lớn
+
+Fetch-all-then-chunk (`fetchCol` mọi id về PHP rồi `array_chunk`) vẫn là O(N)
+memory — backlog lớn sẽ phình RAM tiến trình cron. Dùng vòng lặp keyset: mỗi
+vòng SELECT tối đa `CHUNK_SIZE` id **lớn hơn id đã xử lý** (ORDER BY PK), xử
+lý, lặp tới khi select rỗng.
+
+```php
+$lastId = 0;
+while (true) {
+    $chunk = $connection->fetchCol(
+        $connection->select()
+            ->from($table, ['entity_id'])
+            ->where('entity_id > ?', $lastId)
+            ->where(/* điều kiện nghiệp vụ */)
+            ->order('entity_id ASC')
+            ->limit(self::CHUNK_SIZE) // ví dụ 500
+    );
+    if ($chunk === []) {
+        break;
+    }
+    $lastId = max($chunk); // cursor tiến cả khi chunk fail → không loop vô hạn
+    // ... xử lý chunk (DELETE hàng loạt, log lỗi rồi tiếp chunk kế)
+}
+```
+
+Đặc điểm: memory O(chunk) bất kể backlog; cursor keyset đảm bảo tiến triển
+kể cả khi một chunk lỗi (chunk lỗi được chạy lại ở lần schedule kế tiếp).
+
+### Join đúng 1 row quan hệ mỗi entity (chống row multiplication)
+
+`joinLeft` bảng con (vd: ảnh, address) theo khóa nghiệp vụ sẽ nhân số row
+theo số bản ghi con. Hai hệ quả: fetch N×K rows thừa, và `limit()` áp dụng
+trên row đã nhân — entity có nhiều bản ghi con sẽ làm số entity trả về
+**thiếu** so với limit sau khi dedup ở PHP. Ghim đúng 1 row con bằng subselect
+theo PK:
+
+```php
+// BAD — 1 entity có 3 ảnh → 3 rows; LIMIT 6 có thể chỉ còn 2 entity
+$select->joinLeft(['img' => $imageTable], 'main.entity_id = img.entity_id', [...]);
+
+// GOOD — đúng 1 row con mỗi entity (ảnh đầu theo PK)
+$select->joinLeft(
+    ['img' => $imageTable],
+    'img.image_id = (SELECT MIN(image_id) FROM ' . $imageTable
+        . ' WHERE entity_id = main.entity_id)',
+    ['card_path', 'detail_path']
+);
+```
+
+### Multi-row upsert trên render path
+
+Ghi telemetry/usage N entity lúc render đừng loop từng entity một statement —
+`insertOnDuplicate` nhận **mảng nhiều row**, gom hết thành 1 statement:
+
+```php
+$rows = [];
+foreach ($entityIds as $id) {
+    $rows[] = [
+        'entity_id' => $id,
+        'placement' => $placement,
+        'last_seen_at' => $now,
+    ];
+}
+// 1 statement cho N entity; UNIQUE key + cột update ['last_seen_at'] giữ
+// idempotent (re-render refresh, không insert row mới)
+$connection->insertOnDuplicate($tableName, $rows, ['last_seen_at']);
+```
+
+### Bulk/observer theo entity: tách phần "đúng theo entity" khỏi phần batchable
+
+Xử lý N entity (GDPR erase, reindex...) thường KHÔNG batch được 100%: media
+file, audit row, event payload là per-entity về ngữ nghĩa. Nguyên tắc:
+
+1. **Load danh sách id** 1 query, chọn cột tối thiểu (`addFieldToSelect('entity_id')`).
+2. **Dữ liệu quan hệ dùng chung**: gom hết về PHP bằng 1-2 query batch
+   (IN + group mảng), không query/EAV trong loop.
+3. **Việc thật sự per-entity** (filesystem, event, audit row) giữ nguyên loop —
+   đây là chi phí nghiệp vụ hợp lệ, không phải N+1; đánh dấu như vậy trong
+   review thay vì ép batch phá ngữ nghĩa (transaction/retry/idempotency).
+
 ---
 
 ## 4. Cache Strategy
