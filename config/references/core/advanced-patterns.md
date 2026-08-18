@@ -1072,6 +1072,64 @@ class EntityHydrator implements HydratorInterface
 Magento có `Magento\Framework\EntityManager\HydratorPool` để quản lý hydrators theo entity type.
 
 ---
+## Idempotent upsert: UNIQUE key + `insertOnDuplicate` (pattern "where-used" registry)
+
+Áp dụng cho bảng tracking/registry kiểu "đâu đang dùng" (placement, assignment, sync-state) —
+cần **một row duy nhất per natural key**, lặp lại thao tác chỉ refresh timestamp.
+
+### Quy tắc
+
+1. **Chuẩn hóa natural key thành UNIQUE constraint** trong `db_schema.xml`:
+
+```xml
+<table name="vendor_entity_usage" resource="default" engine="innodb" comment="Placement registry">
+    <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="true"/>
+    <column xsi:type="int" name="source_id" unsigned="true" nullable="false" comment="FK source"/>
+    <column xsi:type="varchar" name="placement_type" nullable="false" length="64"/>
+    <column xsi:type="varchar" name="placement_identifier" nullable="false" length="255"/>
+    <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="First seen"/>
+    <column xsi:type="timestamp" name="last_seen_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Last seen"/>
+    <constraint xsi:type="primary" referenceId="PRIMARY">
+        <column name="entity_id"/>
+    </constraint>
+    <constraint xsi:type="unique" referenceId="VENDOR_ENTITY_USAGE_PLACEMENT_UNIQUE">
+        <column name="source_id"/>
+        <column name="placement_type"/>
+        <column name="placement_identifier"/>
+    </constraint>
+</table>
+```
+
+2. **Upsert chỉ refresh cột "last seen"** — tham số thứ 3 của `insertOnDuplicate` là danh sách cột
+   được UPDATE khi trùng key; truyền tối thiểu:
+
+```php
+$connection->insertOnDuplicate(
+    $this->resourceConnection->getTableName('vendor_entity_usage'),
+    [
+        'source_id'            => $sourceId,
+        'placement_type'       => $type,
+        'placement_identifier' => $identifier,
+        'created_at'           => $now,   // ignored on duplicate
+        'last_seen_at'         => $now,   // the ONLY column refreshed
+    ],
+    ['last_seen_at']
+);
+```
+
+3. **Không** dùng `insertOnDuplicate` cho bảng chưa có UNIQUE trên natural key — không có key thì
+   semantics trở thành "update mọi row trùng giá trị" và bảng vẫn tăng vô hạn theo render/request.
+4. Tracking nằm trên render path → **fail-safe**: bọc try/catch, log qua `Psr\Log\LoggerInterface`
+   (`$logger->error('... failed: {message}', ['message' => $e->getMessage(), ...])`) — không nuốt
+   im lặng, không làm hỏng page render.
+5. Dedupe input trước khi ghi (`array_unique(array_map('intval', $ids))`, skip id <= 0).
+
+### Test chuẩn
+
+- Gọi track 2 lần cùng placement → **1 row**, `created_at` giữ nguyên, `last_seen_at` tăng.
+- Exception từ adapter → `logger->error` được gọi đúng 1 lần với context; method không throw.
+- Input rỗng/toàn id không hợp lệ → không có query ghi nào.
+
 
 ## Liên kết
 
@@ -1079,3 +1137,5 @@ Magento có `Magento\Framework\EntityManager\HydratorPool` để quản lý hydr
 - DI & Generated code: xem [di-codegen.md](./di-codegen.md)
 - Service Contracts: xem [service-contracts.md](./service-contracts.md)
 - SearchCriteria & Data Layer: xem [search-criteria-data-layer.md](./search-criteria-data-layer.md)
+
+---

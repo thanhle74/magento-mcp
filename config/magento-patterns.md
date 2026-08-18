@@ -36,12 +36,14 @@
 | Event/Observer Patterns (thực chiến) | sales_order_place_after, catalog_product_save_after, custom event | [core/event-observer-patterns.md](./references/core/event-observer-patterns.md) |
 | Repository + Service Contract | CRUD entity, public API của module | [core/service-contracts.md](./references/core/service-contracts.md) |
 | SearchCriteria & Data Layer | FilterGroup AND/OR, bulk ops, soft delete, transaction | [core/search-criteria-data-layer.md](./references/core/search-criteria-data-layer.md) |
-| Declarative Schema | Tạo/sửa bảng DB | [core/declarative-schema.md](./references/core/declarative-schema.md) |
+| Declarative Schema | Tạo/sửa bảng DB, **schema ownership giữa các module** | [core/declarative-schema.md](./references/core/declarative-schema.md) |
 | Data Patch | Seed dữ liệu mặc định, migration data | [core/data-schema-patch.md](./references/core/data-schema-patch.md) |
 | DI & Code Generation | Virtual type, proxy, factory, preference | [core/di-codegen.md](./references/core/di-codegen.md) |
 | Object Manager & Generated Code | Shared/non-shared, Interceptor/Factory/Proxy, area config | [core/object-manager-generated.md](./references/core/object-manager-generated.md) |
 | AbstractModel & Collection | DataObject vs AbstractModel, magic getter, ResourceModel hooks | [core/model-collection-patterns.md](./references/core/model-collection-patterns.md) |
 | Advanced Patterns | Command pool, Strategy, Composite, Pipeline, PHP 8.x | [core/advanced-patterns.md](./references/core/advanced-patterns.md) |
+| Multi-file Upload Normalization | Chuẩn hóa `$_FILES` transposed → per-file descriptors (service dùng chung) | [core/upload-files-normalization.md](./references/core/upload-files-normalization.md) |
+| Transaction + Side-effect Cleanup | DB transaction kèm track & dọn file media khi rollback; exception contract dọc call chain | [core/transaction-side-effect-cleanup.md](./references/core/transaction-side-effect-cleanup.md) |
 | Debugging & Troubleshooting | 500 error, WSOD, DI compile error, plugin conflict, memory leak | [core/debugging-troubleshooting.md](./references/core/debugging-troubleshooting.md) |
 | Routing & Controllers | Tạo route frontend/adminhtml | [core/routing-controllers.md](./references/core/routing-controllers.md) |
 | Architectural Patterns | SOLID, composition, design patterns | [core/architectural-patterns.md](./references/core/architectural-patterns.md) |

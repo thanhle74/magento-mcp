@@ -273,6 +273,31 @@ File `db_schema_whitelist.json` sẽ được tạo/cập nhật. Commit cả 2 
 
 ---
 
+---
+
+## Schema ownership giữa các module (bảng dùng chung)
+
+**QUY TẮC:** bảng mà nhiều module/tier cùng đọc-ghi, hoặc mà module lõi cần tồn tại để chạy
+standalone → declaration schema phải nằm ở **module thấp nhất trong dependency chain** (thường là
+Core). Addon chỉ sở hữu bảng **riêng additive** của nó (dữ liệu feature riêng, Core không chạm tới).
+
+Vì sao: declaration schema = quyền tạo/xóa bảng. Nếu Core đọc/ghi bảng do addon khai báo, bản cài
+chỉ gồm Core (Free-tier standalone) sẽ lỗi SQL ngay observer/controller đầu tiên chạm bảng — vi phạm
+ranh giới phụ thuộc theo **hiệu ứng dữ liệu**, kể khi không hề có PHP import từ Core sang addon.
+
+### Checklist khi chuyển ownership bảng về Core (phải là no-op DDL)
+
+1. `SHOW CREATE TABLE <table>` — ghi lại đúng tên PRIMARY/FK/UNIQUE/INDEX **đang tồn tại** trong DB.
+2. Viết declaration mới trong Core với `referenceId` **đúng tên đó** (tên auto-generated mặc định
+   của Magento dạng `TABLE_COL_REFTABLE_REFCOL`) — đừng "đổi tên cho đẹp" trong cùng lần chuyển,
+   nếu không `setup:upgrade` sẽ drop/create constraint trên DB production.
+3. Xóa `db_schema.xml` của addon; **regenerate whitelist** cho Core
+   (`setup:db-declaration:generate-whitelist --module-name=Vendor_Core`), commit cả hai file.
+4. Chứng minh no-op: snapshot `SHOW CREATE TABLE` + row count **trước/sau** `setup:upgrade`
+   (diff rỗng, data nguyên vẹn), và chạy `setup:upgrade` lần 2 (idempotent).
+5. Verify ranh giới sau thay đổi (codegraph/grep): Core không import/tham chiếu implementation
+   PHP của addon; chiều addon→Core giữ nguyên.
+
 ## Lưu ý khi disable module
 
 Khi disable module trong `app/etc/config.php`, chạy `setup:upgrade` sẽ **xoá bảng** của module đó.
@@ -291,6 +316,6 @@ bin/magento setup:upgrade --data-restore=1
 
 ## Liên kết
 
-- Quy tắc chung: xem [constitution.md](../constitution.md)
-- Các pattern: xem [magento-patterns.md](../magento-patterns.md)
-- Checklist: xem [checklist.md](../checklist.md)
+- Quy tắc chung: xem [constitution.md](../../constitution.md)
+- Các pattern: xem [magento-patterns.md](../../magento-patterns.md)
+- Checklist: xem [checklist.md](../../checklist.md)
