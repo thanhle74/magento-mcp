@@ -1,53 +1,32 @@
-# AGENTS.md — AI
+# AGENTS.md — Magento SSOT Knowledge Base & MCP Server
 
-Magento 2.4.8-p4 / PHP 8.3.
+Magento 2.4.8-p4 / PHP 8.3 Central Reference Library.
 
-## Nguyên tắc số 1: `config/` là trung tâm
+## Mục đích Repo
 
-[`config/README.md`](config/README.md) = thư viện tài liệu chuẩn. **Bắt buộc đọc trước** mọi FEATURE, implement, review, HOTFIX (có sửa code), và `Q:` (câu hỏi kỹ thuật).
+Repo này là **Thư viện tri thức trung tâm (Single Source of Truth - SSOT)** và **MCP Server**.
+- **Không chứa quy trình làm việc hay quản lý task/feature:** Các dự án Magento khác sẽ sử dụng framework/quy trình riêng của dự án đó.
+- **Vai trò:** Cung cấp thông tin chuẩn mực kỹ thuật (Constitution, Checklist, Design Patterns, Code References) thông qua các MCP Tool cho bất kỳ AI Agent nào tham chiếu.
 
-| Bước | Việc |
-|------|------|
-| 1 | **`get_team_standards`** (MCP) hoặc đọc đủ 3 file core trong `config/` |
-| 2 | `read_spec` → `features/.../spec.md` (nghiệp vụ feature) |
-| 3 | `read_spec` → `config/references/...` theo pattern trong `magento-patterns.md` |
-| 4 | Code theo `constitution.md` + pattern references |
-| 5 | **`get_review_gate`** — BẮT BUỘC trước báo done / khi review PR-module |
-| 6 | PHPCS, test, verify; báo cáo sections checklist đã review |
+---
 
-**Cấm:** implement/review/approve chỉ dựa feature `spec.md`, bỏ qua `config/`.
+## Cấu trúc Nguồn tri thức (`config/`)
 
-Workflow: [`QUICKSTART.md`](QUICKSTART.md)
+- [`config/constitution.md`](config/constitution.md): Chuẩn code PHP 8.3 / Magento 2.4.8-p4, SOLID, Security, Performance, DB Declarative Schema.
+- [`config/checklist.md`](config/checklist.md): Tiêu chí nghiệm thu & Review Gate (§12 Review gate).
+- [`config/magento-patterns.md`](config/magento-patterns.md): Danh mục các mẫu thiết kế (GraphQL, REST, Plugin, Observer, Adminhtml, EAV...).
+- [`config/references/`](config/references/): Thư viện mã mẫu và hướng dẫn chi tiết cho từng pattern.
 
-## Trigger
+---
 
-| Prefix | Hành vi |
-|--------|---------|
-| `Q:` | Đọc **`config/`** + code; không tạo feature |
-| `HOTFIX:` | `get_team_standards` → spec tối giản → fix |
-| `FEATURE:` | standards → spec → `OK spec` → code → **review gate** → done |
-| Review module | `get_team_standards` + **`get_review_gate`** + code + checklist |
+## Tích hợp MCP Server
 
-## Feature `spec.md`
+AI Agent ở bất kỳ dự án Magento nào chỉ cần kết nối tới MCP Server này để tra cứu chuẩn:
 
-Một file: AC, test cases, Tasks, Status. Không thay `config/`.
-
-Tạo: `./scripts/new-feature.sh <tên> [project]`
-
-## Pattern trong `config/references/`
-
-- Bắt đầu từ `magento-patterns.md`
-- Chỉ mở file reference **đúng pattern** feature cần
-- Ghi path đã đọc vào Technical notes của `spec.md`
-
-## MCP
-
-| Khi | Tool |
-|-----|------|
-| Trước code / spec | **`get_team_standards`** |
-| Sau code / review | **`get_review_gate`** (bắt buộc) |
-| Feature / search | `read_spec`, `search_spec`, … |
-
-## Output
-
-Files changed · test · **checklist** · testcase — theo [`config/constitution.md`](config/constitution.md).
+- **Command:** `node /home/thanhle/Sites/spec/src/index.js`
+- **MCP Tools khả dụng:**
+  - `get_team_standards`: Lấy nhanh Constitution, Checklist & Pattern index.
+  - `get_pattern_reference`: Lấy hướng dẫn chi tiết cho pattern cụ thể (VD: `core/plugin-patterns.md`).
+  - `search_standards`: Tìm kiếm chuẩn/quy tắc theo từ khóa trong `config/`.
+  - `get_review_gate`: Lấy checklist nghiệm thu code.
+  - `read_spec_file`: Đọc bất kỳ tài liệu tham khảo nào trong `config/`.

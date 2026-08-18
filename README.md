@@ -1,29 +1,46 @@
-# Spec — Magento team library (central)
+# Magento Spec & Standards (SSOT & MCP Server)
 
-Repo này trên **VPS** — MCP **chỉ đọc** (`config/`, `references/`). Feature spec nằm trong từng project: **`<magento-repo>/.spec/`**.
+Repo này là **Thư viện tri thức trung tâm (Single Source of Truth - SSOT)** về chuẩn Magento 2.4.8-p4 / PHP 8.3, tích hợp sẵn **MCP Server Stdio**.
 
-## Dev setup
+Repo này **không chứa quy trình hay quản lý task/feature**. Bạn có thể kết nối MCP Server này vào bất kỳ dự án Magento nào để AI Agent ở dự án đó tham chiếu chuẩn kỹ thuật.
 
-[thanhle74/magento-spec-mcp SETUP.md](https://github.com/thanhle74/magento-spec-mcp/blob/main/SETUP.md)
+---
 
-1. MCP remote → `get_team_standards`
-2. `init-project-spec.sh` → `.spec/` trong project Magento
-3. `/spec` trong Cursor
+## 📌 Cấu trúc Nguồn sự thật (`config/`)
 
-## Luồng
+- `config/constitution.md` — Chuẩn kỹ thuật PHP 8.3 & Magento core.
+- `config/checklist.md` — Tiêu chí Review Gate & DoD.
+- `config/magento-patterns.md` — Bản đồ thiết kế (Plugin, Event, GraphQL, REST, Admin...).
+- `config/references/` — Hướng dẫn mẫu code chi tiết cho từng component.
 
-```text
-get_team_standards  →  .spec/features/.../spec.md  →  code  →  get_review_gate
+---
+
+## ⚡ Cấu hình kết nối MCP Server
+
+Thêm đoạn cấu hình sau vào Antigravity (`~/.gemini/antigravity/mcp_config.json`) hoặc Cursor (`~/.cursor/mcp.json`) ở bất kỳ máy / workspace nào:
+
+```json
+{
+  "mcpServers": {
+    "magento-spec": {
+      "command": "node",
+      "args": ["/home/thanhle/Sites/spec/src/index.js"],
+      "env": {
+        "SPEC_ROOT": "/home/thanhle/Sites/spec"
+      }
+    }
+  }
+}
 ```
 
-## Cấu trúc (central)
+---
 
-```
-config/
-  constitution.md
-  checklist.md
-  magento-patterns.md
-  references/
-```
+## 🛠️ MCP Tools cung cấp cho AI
 
-Feature specs: **không** lưu ở đây nữa (dùng `.spec/` per project).
+| Tool | Mô tả |
+|---|---|
+| `get_team_standards` | Nạp nhanh Constitution, Checklist & Pattern index. |
+| `get_pattern_reference` | Lấy chi tiết mẫu code theo tên (VD: `core/plugin-patterns.md`). |
+| `search_standards` | Tìm kiếm chuẩn/quy tắc theo từ khóa trong `config/`. |
+| `get_review_gate` | Nạp checklist kiểm tra chất lượng code trước khi hoàn thành. |
+| `read_spec_file` | Đọc bất kỳ file tài liệu nào trong thư viện spec. |
