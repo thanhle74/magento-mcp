@@ -4,7 +4,7 @@ Repo: `/home/thanhle/Sites/spec` · Branch: `task/review-rules-mcp-audit-2026082
 
 ## 1. Repo discovery
 
-- Origin: `git@github.com:thanhle74/spec.git` — task prompt expected `thanhle74/magento-spec`; **repo appears renamed** (report only, not changed).
+- Identity (correction 2026-08-25, TL-verified): MCP name **magento-spec** (registered MCP server name, unchanged); GitHub repo **thanhle74/magento-mcp**; local path `/home/thanhle/Sites/spec`. Origin normalized from legacy `git@github.com:thanhle74/spec.git` (GitHub redirect) to `git@github.com:thanhle74/magento-mcp.git` after verifying fetch/push access.
 - Pre-existing dirty work at audit start: coherent in-progress **MCP v1.2.0** feature (prompts capability in `src/index.js`, `scripts/check-links.mjs`, `.github/workflows/ci.yml`, README/AGENTS/package.json updates). Preserved and committed as separate attributed commit `a5db012` before audit changes.
 - MCP entry: `node /home/thanhle/Sites/spec/src/index.js` (stdio, `@modelcontextprotocol/sdk`), registered in `~/.claude.json`. 5 tools, 3 prompts, substring search over `config/**/*.md` + `examples/**/*.md` (50-cap, `research-log.md` excluded, mtime cache, traversal guard).
 
@@ -85,3 +85,14 @@ No Magento core files touched. No new scattered micro-docs — all lessons folde
 - Commit 1 (`a5db012`): preserved pre-existing v1.2.0 work (separately attributed).
 - Commit 2: audit changes + this document.
 - Pushed to origin; **not merged to main** — awaiting independent review.
+
+
+## 8. Correction (2026-08-25, follow-up review)
+
+- **Severity taxonomy SSOT**: unified to P0/BLOCKER, P1/RECOMMENDATION, P2/INFORMATIONAL.
+  Updated: `src/index.js` `review` prompt (was Critical/High/Medium/Low), `config/checklist.md` §12 gate line, `config/constitution.md` blocking rules (3 occurrences of Critical/High). No stricter gate invented — completion rule = no unresolved P0/BLOCKER; P1 fixed or accepted as follow-up with owner; P2 informational.
+- **ObjectManager-in-tests**: checklist §9 `createMock()`-only rule confirmed **intentional stricter team policy** vs Magento permissiveness (`unit-testing.md` §7D OM Helper) — now documented in §9; not loosened.
+- **Runtime proof**: scoped to framework-sensitive changes only (checklist §13, unit-testing.md §10 wording already bounded) — verified, no change needed.
+- **MSI invalidation wording**: claims limited to what core evidence proves (same `clean_cache_by_tags`/`cat_p` signal core `module-inventory-cache` uses for FPC; no claim of universal coverage; bounded-TTL fallback required for unprovable sources) — verified, no change needed.
+- **Repo identity**: local origin normalized to `thanhle74/magento-mcp.git` (metadata only).
+- **Regression**: smoke test now asserts the `review` prompt contains canonical severity terms and no Critical/High/Medium/Low gate instruction; 7 retrieval queries re-run — GOOD ×7.

@@ -161,8 +161,8 @@ Chỉ tính năng nào cần, mới thêm folder tương ứng. Không tạo fol
 ### Blocking rules (không được bỏ qua)
 
 - Test fail → **DỪNG**. Phân tích root cause → sửa implementation (không sửa test để "cheat") → chạy lại. Tối đa **3 lần**; nếu vẫn fail thì dừng hẳn, báo người dùng kèm phân tích nguyên nhân.
-- Review còn Critical/High issue → **DỪNG**. Sửa implementation → chạy lại test → review lại. Tối đa **3 lần**; nếu vẫn còn issue thì dừng hẳn, báo người dùng kèm danh sách issue còn lại.
-- Chỉ được báo task hoàn thành khi: test pass **VÀ** không còn Critical/High issue từ review.
+- Review còn issue **P0/BLOCKER** → **DỪNG**. Sửa implementation → chạy lại test → review lại. Tối đa **3 lần**; nếu vẫn vẫn còn issue thì dừng hẳn, báo người dùng kèm danh sách issue còn lại.
+- Chỉ được báo task hoàn thành khi: test pass **VÀ** không còn issue **P0/BLOCKER** chưa xử lý từ review (P1 phải đã fix hoặc được chấp nhận là follow-up có owner).
 - Framework: Magento's `\PHPUnit\Framework\TestCase` (extend từ `\Magento\TestFramework\TestCase\AbstractController` hoặc `\PHPUnit\Framework\TestCase` tùy loại).
 - Đặt test tại: `Test/Unit/<mirror-path-của-class>.php`.
 - **Bắt buộc unit test** cho các class có business logic:
@@ -191,7 +191,7 @@ Task chỉ được xem là hoàn thành khi đạt đủ:
 1. Đúng acceptance criteria trong spec/task contract.
 2. Không vi phạm rule trong constitution + magento-patterns.
 3. Unit test đã viết (nếu task thuộc nhóm bắt buộc) và pass.
-4. **checklist.md** đã chạy đủ section liên quan (§0, §1, §2, …) — không còn issue Critical/High.
+4. **checklist.md** đã chạy đủ section liên quan (§0, §1, §2, …) — không còn issue P0/BLOCKER chưa xử lý (xem `checklist.md` §12 severity table).
 5. Đã chạy verify steps và báo kết quả rõ ràng.
 6. Báo cáo cuối có đủ:
   - Files changed

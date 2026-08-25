@@ -143,6 +143,22 @@ check("prompts/get implement without task → error", noTask.error !== undefined
 const bogus = await call("prompts/get", { name: "nope" });
 check("prompts/get unknown prompt → error", bogus.error !== undefined);
 
+// 12. review prompt uses the canonical severity taxonomy (checklist §12)
+const review = await call("prompts/get", { name: "review", arguments: {} });
+const reviewText = review.result?.messages
+  ?.map((m) => m.content?.text ?? "")
+  .join("\n");
+check(
+  "review prompt has canonical severity terms",
+  ["P0", "P1", "P2", "BLOCKER", "RECOMMENDATION", "INFORMATIONAL"].every((t) =>
+    reviewText.includes(t)
+  )
+);
+check(
+  "review prompt does not teach Critical/High/Medium/Low gate",
+  !/Critical\s*\/\s*High/.test(reviewText)
+);
+
 clearTimeout(timeout);
 const failed = results.filter((r) => !r.ok).length;
 proc.kill();

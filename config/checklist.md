@@ -96,7 +96,7 @@
 
 - [ ] Task có business logic: unit test viết trước (TDD), đặt tại `Test/Unit/`
 - [ ] Cover happy path + ít nhất 1 edge/negative case
-- [ ] Mock qua `createMock()`, không dùng ObjectManager trong test
+- [ ] Mock qua `createMock()`, không dùng ObjectManager trong test — **team policy chặt hơn Magento**: Adobe/`references/ops/unit-testing.md` §7D cho phép `TestFramework\Unit\Helper\ObjectManager` khi constructor ≥5 dependency, nhưng team yêu cầu inject thủ công (hoặc `getMockBuilder` cho magic method) để test luôn lộ rõ dependency; không nới lỏng chỉ vì Magento cho phép
 - [ ] `./vendor/bin/phpunit` → all pass
 - [ ] `setup:di:compile` sau khi sửa DI
 - [ ] **PHPCS** (`Magento2` standard) trên scope module: **0 errors**
@@ -129,7 +129,7 @@
 
 - [ ] Unit test pass (nếu task có business logic)
 - [ ] Đối chiếu **checklist này** (không chỉ AC trong spec)
-- [ ] Không còn issue **Critical/High** từ review
+- [ ] Không còn issue **P0/BLOCKER** chưa xử lý từ review (P1 đã fix hoặc được chấp nhận là follow-up có owner — §12 severity table)
 - [ ] PHPCS 0 errors; docblock warnings đã xử lý (§1, §9)
 - [ ] Verify steps trong spec/task contract của dự án đã chạy — ghi Pass/Fail
 - [ ] Blockers cập nhật trong spec/task contract của dự án hoặc báo cáo cuối
