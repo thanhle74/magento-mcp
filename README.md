@@ -56,8 +56,35 @@ claude mcp add magento-spec -s user -- node /path/to/spec/src/index.js
 
 ---
 
+## ⚡ MCP Prompts (slash commands)
+
+MCP server cung cấp sẵn 3 prompts — trong Claude Code hiện dạng slash command:
+
+| Prompt | Lệnh | Chức năng |
+|---|---|---|
+| `session-start` | `/mcp__magento-spec__session-start` | Bootstrap đầu session: nạp standards + pattern index, tóm tắt rule quan trọng. |
+| `review` | `/mcp__magento-spec__review` | Review diff hiện tại theo Review Gate (checklist §12), phân loại issue. |
+| `implement` | `/mcp__magento-spec__implement "task..."` | Quy trình implement 1 task: load chuẩn → chọn pattern → code + unit test → review gate. |
+
+Ví dụ:
+
+```
+/mcp__magento-spec__implement "thêm shipping method mới cho Laybyland"
+```
+
+---
+
 ## 🔄 Quy trình khuyến nghị cho AI Agent
 
-1. **Trước code:** `get_team_standards` → nạp Constitution + Checklist + Pattern index.
-2. **Khi implement:** `get_pattern_reference` / `search_standards` / `read_spec_file` để tra cứu pattern — không đoán từ memory.
-3. **Trước khi báo done:** `get_review_gate` → qua §12 Review Gate trong `checklist.md`.
+1. **Trước code:** `/mcp__magento-spec__session-start` (hoặc gọi `get_team_standards` trực tiếp) → nạp Constitution + Checklist + Pattern index.
+2. **Khi implement:** dùng `/mcp__magento-spec__implement`, hoặc gọi `get_pattern_reference` / `search_standards` / `read_spec_file` để tra cứu pattern — không đoán từ memory.
+3. **Trước khi báo done:** `/mcp__magento-spec__review` (hoặc `get_review_gate`) → qua §12 Review Gate trong `checklist.md`.
+
+---
+
+## ✅ CI
+
+Mọi push/PR chạy tự động (`.github/workflows/ci.yml`):
+
+- `npm test` — smoke test MCP server (tools + prompts, path traversal, isError).
+- `npm run check:links` — kiểm dead link + orphan reference (index discipline).

@@ -4,6 +4,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -91,14 +93,112 @@ async function listFilesRecursive(dir, base = "") {
   return results;
 }
 
+// Slash-command prompts (MCP prompts capability). Each prompt is an instruction
+// message telling the agent WHICH MCP tools to call — content stays in the KB.
+const PROMPTS = [
+  {
+    name: "session-start",
+    description:
+      "Bootstrap đầu session: nạp chuẩn team Magento (SSOT) trước khi code.",
+    arguments: [],
+    build: () => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: [
+              "Bootstrap session làm việc trên dự án Magento 2.4.8-p5 / PHP 8.3.",
+              "",
+              "Thực hiện theo thứ tự:",
+              "1. Gọi tool `get_team_standards` để nạp Constitution + Checklist + Pattern index từ SSOT của team.",
+              "2. Gọi tool `get_pattern_reference` (không truyền path) để lấy danh sách references chi tiết.",
+              "3. Tóm tắt ngắn gọn (tối đa 10 dòng) các rule quan trọng nhất bạn sẽ tuân thủ: coding standard, những điều cấm (Constitution §2), scope governance (§9), testing policy (§10).",
+              "4. Xác nhận đã sẵn sàng rồi chờ task. KHÔNG tự code gì trước khi có task cụ thể.",
+            ].join("\n"),
+          },
+        },
+      ],
+    }),
+  },
+  {
+    name: "review",
+    description:
+      "Review diff hiện tại theo Review Gate của team (checklist §12).",
+    arguments: [],
+    build: () => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: [
+              "Review thay đổi code Magento hiện tại theo Review Gate của team.",
+              "",
+              "Thực hiện:",
+              "1. Gọi tool `get_review_gate` để nạp checklist review (§12 là Review Gate).",
+              "2. Xem diff hiện tại của repo (git diff HEAD; nếu có staged changes thì xem cả git diff --cached).",
+              "3. Đối chiếu TỪNG mục checklist liên quan với diff; mọi vi phạm phải kèm file:line cụ thể.",
+              "4. Phân loại issue: Critical / High / Medium / Low.",
+              "5. Kết luận: PASS (đủ điều kiện báo done) hoặc NEEDS FIX kèm danh sách issue và chỗ cần sửa.",
+              "",
+              "Lưu ý: KHÔNG tự sửa code — chỉ review và báo cáo.",
+            ].join("\n"),
+          },
+        },
+      ],
+    }),
+  },
+  {
+    name: "implement",
+    description:
+      "Implement một task Magento theo chuẩn team: load chuẩn → chọn pattern → code → review gate.",
+    arguments: [
+      {
+        name: "task",
+        description: "Mô tả task cần implement",
+        required: true,
+      },
+    ],
+    build: (args) => {
+      if (typeof args?.task !== "string" || args.task.trim() === "") {
+        throw new Error(
+          "Prompt 'implement' requires a non-empty 'task' argument"
+        );
+      }
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: [
+                `Implement task Magento sau theo chuẩn team (SSOT): "${args.task.trim()}"`,
+                "",
+                "Quy trình bắt buộc:",
+                "1. Gọi `get_team_standards` để nạp Constitution + Checklist + Pattern index.",
+                "2. Chọn pattern liên quan từ Pattern index, đọc chi tiết qua `get_pattern_reference` hoặc `search_standards` — KHÔNG code theo trí nhớ.",
+                "3. Trước khi code: nêu understanding của requirement, rủi ro thấy trước, và phương án nếu có nhiều cách làm (Constitution §15). Core-first: kiểm tra Magento core hỗ trợ sẵn trước khi build mới (§9).",
+                "4. Implement theo chuẩn; viết unit test cho business logic (§10), TDD khi khả thi.",
+                "5. Trước khi báo done: gọi `get_review_gate` và đối chiếu §12.",
+              ].join("\n"),
+            },
+          },
+        ],
+      };
+    },
+  },
+];
+
 const server = new Server(
   {
     name: "magento-spec-mcp",
-    version: "1.1.0",
+    version: "1.2.0",
   },
   {
     capabilities: {
       tools: {},
+      prompts: {},
     },
   }
 );
@@ -298,6 +398,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   throw new Error(`Unknown tool: ${name}`);
+});
+
+server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+  prompts: PROMPTS.map(({ name, description, arguments: args }) => ({
+    name,
+    description,
+    arguments: args,
+  })),
+}));
+
+server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+  const prompt = PROMPTS.find((p) => p.name === name);
+  if (!prompt) {
+    throw new Error(
+      `Unknown prompt: ${name} (available: ${PROMPTS.map((p) => p.name).join(", ")})`
+    );
+  }
+  return { description: prompt.description, ...prompt.build(args ?? {}) };
 });
 
 async function main() {

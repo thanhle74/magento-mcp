@@ -48,11 +48,16 @@ const timeout = setTimeout(() => {
   process.exit(1);
 }, 20000);
 
-await call("initialize", {
+const init = await call("initialize", {
   protocolVersion: "2024-11-05",
   capabilities: {},
   clientInfo: { name: "smoke-test", version: "0" },
 });
+check(
+  "server declares tools + prompts capabilities",
+  init.result?.capabilities?.tools !== undefined &&
+    init.result?.capabilities?.prompts !== undefined
+);
 send({ jsonrpc: "2.0", method: "notifications/initialized" });
 
 // 1. tools/list — 5 tools
@@ -110,6 +115,33 @@ check(
   "reference listing clean (no merged/removed files)",
   !/plugins\.md|di-codegen|series\.md|release-notes/.test(listText)
 );
+
+// 8. prompts/list — 3 prompts
+const prompts = await call("prompts/list", {});
+const promptNames = prompts.result.prompts.map((p) => p.name);
+check(
+  "prompts/list returns 3 prompts",
+  promptNames.length === 3 && promptNames.includes("implement"),
+  promptNames.join(", ")
+);
+
+// 9. prompts/get interpolates the task argument
+const impl = await call("prompts/get", {
+  name: "implement",
+  arguments: { task: "add admin grid" },
+});
+check(
+  "prompts/get implement interpolates task",
+  impl.result?.messages?.[0]?.content?.text?.includes("add admin grid")
+);
+
+// 10. prompts/get with missing required argument → JSON-RPC error
+const noTask = await call("prompts/get", { name: "implement", arguments: {} });
+check("prompts/get implement without task → error", noTask.error !== undefined);
+
+// 11. prompts/get unknown prompt → JSON-RPC error
+const bogus = await call("prompts/get", { name: "nope" });
+check("prompts/get unknown prompt → error", bogus.error !== undefined);
 
 clearTimeout(timeout);
 const failed = results.filter((r) => !r.ok).length;

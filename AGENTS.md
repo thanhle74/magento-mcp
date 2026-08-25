@@ -33,11 +33,15 @@ Magento 2.4.8-p5 / PHP 8.3 Central Reference Library. Repo này là **thư việ
 npm test
 ```
 
-Smoke test (`scripts/smoke-test.mjs`) kiểm: 5 tools, path traversal bị chặn, `isError` khi thiếu argument, đọc file core, search phủ `config/` + `examples/`, cảnh báo size cho file lớn, listing không còn file đã gộp/xóa.
+Smoke test (`scripts/smoke-test.mjs`) kiểm: capabilities (tools + prompts), 5 tools, path traversal bị chặn, `isError` khi thiếu argument, đọc file core, search phủ `config/` + `examples/`, cảnh báo size cho file lớn, listing không còn file đã gộp/xóa, 3 prompts + xử lý argument/error.
 
 ## Kiểm tra link / orphan (index discipline)
 
-Mọi link `.md` trong docs phải tồn tại; mọi file trong `config/references/` + `examples/` phải được tham chiếu từ ít nhất một index (`magento-patterns.md`, `examples/INDEX.md`, hoặc file reference cha như `network/graphql/README.md`).
+```bash
+npm run check:links
+```
+
+`scripts/check-links.mjs` kiểm: mọi link `.md` relative trong docs phải tồn tại; mọi file trong `config/references/` + `examples/` phải được tham chiếu từ ít nhất một index (`magento-patterns.md`, `examples/INDEX.md`, hoặc file reference cha như `network/graphql/README.md`). CI (`.github/workflows/ci.yml`) chạy cả hai check trên mọi push/PR.
 
 ## MCP Tools (dành cho dự án consume)
 
@@ -48,5 +52,17 @@ Mọi link `.md` trong docs phải tồn tại; mọi file trong `config/referen
 | `search_standards` | Tìm keyword trong `config/` + `examples/`. |
 | `get_review_gate` | Checklist review trước khi báo done. |
 | `read_spec_file` | Đọc file bất kỳ trong repo. |
+
+## MCP Prompts (slash commands)
+
+Định nghĩa trong `PROMPTS` (src/index.js) — mỗi prompt là message hướng dẫn agent gọi tools nào, nội dung chuẩn vẫn nằm trong `config/`.
+
+| Prompt | Chức năng |
+|---|---|
+| `session-start` | Bootstrap đầu session: nạp standards + pattern index, tóm tắt rule. |
+| `review` | Review diff hiện tại theo Review Gate (checklist §12). |
+| `implement` | Implement task theo quy trình: load chuẩn → chọn pattern → code → review gate. |
+
+Quy tắc chỉnh sửa prompts: prompt chỉ trỏ về tools/sections, KHÔNG nhét nội dung chuẩn vào prompt text (tránh trùng SSOT).
 
 Cấu hình kết nối cho dự án khác: xem `README.md`.
