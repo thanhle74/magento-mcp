@@ -4,6 +4,8 @@ Nguồn: https://developer.adobe.com/commerce/php/development/cache/partial/
 
 ---
 
+> Từ khóa tra cứu: cache tag, clean_cache_by_tags, invalidation, ETag, 304, If-None-Match, MSI stock cache, CacheInterface clean, stale cache.
+
 ## 1. Khai báo Cache Type mới
 
 Nếu module của bạn có dữ liệu tính toán phức tạp (vd: bảng giá riêng), hãy tạo Cache Type riêng.
@@ -42,6 +44,26 @@ $this->cache->save(
 // LẤY DỮ LIỆU
 $data = $this->serializer->unserialize($this->cache->load('unique_cache_id'));
 ```
+
+### ⚠️ Hợp đồng `clean($tags)` của `App\Cache\Proxy` — bẫy runtime đã xác chứng
+
+`Magento\Framework\App\CacheInterface` khi chạy thực tế là `Magento\Framework\App\Cache\Proxy`,
+mà `Proxy::clean(array $tags)` **không nhận `$mode` kiểu Zend**. Truyền cú pháp Zend legacy
+`clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, ['my_tag'])` sẽ khiến **chuỗi mode trở thành
+một tag** — lệnh chạy không lỗi nhưng là no-op im lặng (bằng chứng redis MONITOR:
+`SINTER zc:ti:<prefix>MATCHINGTAG`).
+
+```php
+// ✅ ĐÚNG — hợp đồng Proxy: mảng tag thuần (semantics MATCHING_ANY_TAG; 1 tag ≡ matching)
+$this->cache->clean(['my_custom_cache_tag']);
+
+// ❌ SAI — no-op im lặng trên runtime Proxy
+$this->cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, ['my_custom_cache_tag']);
+```
+
+Unit test với mock chỉ assert **call** chứ không assert hành vi backend → không bắt được
+defect này. Bắt buộc chứng minh runtime khi đổi logic invalidation (xem
+[../ops/unit-testing.md](../ops/unit-testing.md) §10).
 
 ---
 
@@ -226,6 +248,40 @@ Luôn kiểm tra các Header sau để biết Cache có hoạt động hay khôn
 - **X-Magento-Cache-Control**: `max-age=...` (Thời gian cache còn lại).
 - **X-Magento-Cache-Debug**: `HIT` hoặc `MISS` (Varnish/FPC có nhận hay không).
 - **X-Magento-Tags**: Danh sách nhãn thực thể có trong trang (Dùng để Purge).
+
+---
+
+## 10. Cache tự build: invalidation phải phủ MỌI nguồn dữ liệu (bài học runtime)
+
+Khi module tự lưu response/DTO cache, tag invalidation phải phủ **mọi nguồn dữ liệu đi vào
+cache entry** — không chỉ nguồn "rõ ràng" nhất:
+
+- Product save/delete: `catalog_product_save_commit_after` / `catalog_product_delete_commit_after`.
+- **MSI stock/salability**: thay đổi tồn kho qua MSI indexer **KHÔNG phát sinh** bất kỳ
+  event `catalog_product_save_*` nào. Core dùng event Magento-native `clean_cache_by_tags`
+  với `CacheContext` mang identities `Magento\Catalog\Model\Product::CACHE_TAG`
+  (`cat_p_<id>`) — wired qua `module-inventory-cache/etc/di.xml` cho cả source-item sync
+  strategy lẫn reservation salability queue. Observer trên event này với prefix `cat_p`
+  cho coverage ngang FPC của core.
+- Pricing (catalog price rule), url_rewrite, config (`core_config_data` — nhớ config là
+  per-scope, invalidation theo đúng scope đã lưu), CMS block/page: mỗi nguồn một event riêng.
+
+Nếu **không thể chứng minh** phủ được một nguồn: cache lifetime phải có giới hạn (bounded
+TTL, admin-tunable) — stale-correctness tradeoff phải là lựa chọn có chủ đích, không phải
+mặc định ngầm.
+
+## 11. ETag/304 ≠ tránh backend work
+
+`ETag` tính từ body **sau khi body đã được tính xong** (vd `sha1($body)`). 304 chỉ tiết kiệm
+**bandwidth**, không tiết kiệm computation của request đó. Ba tầng riêng biệt:
+
+| Tầng | Cơ chế | Tiết kiệm gì |
+|---|---|---|
+| Bandwidth | ETag + If-None-Match → 304 | bytes truyền |
+| Backend | application cache (load/save trong controller/service) | computation + SQL |
+| Edge | CDN/Varnish theo Cache-Control | cả request không chạm origin |
+
+Review: đừng ghi "ETag giảm tải server" — chỉ đúng khi kèm application cache hoặc edge cache.
 
 ---
 

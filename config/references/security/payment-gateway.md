@@ -4,6 +4,8 @@ Nguồn: https://developer.adobe.com/commerce/php/development/payments-integrati
 
 ---
 
+> Từ khóa tra cứu: payment gateway, redirect payment, return URL, callback, webhook, idempotent, signature verify, cron expiry.
+
 ## 0. Khởi tạo Module (module.xml)
 
 Module thanh toán bắt buộc phải khai báo phụ thuộc (`sequence`) để đảm bảo hệ thống load đúng thứ tự.
@@ -425,3 +427,34 @@ if (strpos($methodCode, 'layby') !== false
     // filter
 }
 ```
+
+---
+
+## 17. Review rules — Redirect payment flow (redirect về trang kết quả ≠ đã thanh toán)
+
+Quy tắc review chung cho payment method dạng redirect (khách rời site sang trang provider
+rồi quay về). Áp dụng lifecycle Magento, KHÔNG cụ thể cho provider nào (mọi claim về
+VNPAY/MoMo/ZaloPay phải verify riêng trước khi viết vào spec).
+
+1. **Browser return ≠ payment proof**: trang success/error khách quay về chỉ là UI —
+   trạng thái thanh toán CHỈ được xác nhận qua callback/webhook đã verify, hoặc API query.
+   Không đổi order state dựa trên việc khách "đã về success page".
+2. **Callback phải idempotent**: provider retry / khách reload return URL / IPN trễ có
+   thể cùng 1 giao dịch đến nhiều lần — xử lý lần thứ N phải an toàn (đã processed →
+   no-op thành công, không double-invoice/double-capture).
+3. **Verify chữ ký + amount + currency** của callback theo tài liệu provider trước khi
+   tin payload; reject nếu sai. Verify TRƯỚC mọi state change.
+4. **State transition qua Magento service** (`OrderService`/`InvoiceService`/payment
+   command), KHÔNG `UPDATE sales_order SET state=...` / set status trực tiếp bằng raw SQL —
+   mất reservation (MSI), mất totals, lệch state machine.
+5. **Provider URL có expiry**: link thanh toán hết hạn → khách không thanh toán được nữa;
+   đơn "chờ thanh toán" cần cron expiry có chủ đích (cancel order + giải phóng reservation
+   qua Magento cancellation flow).
+6. **Cron-expiry vs late-callback race**: callback hợp lệ đến SAU khi cron đã cancel đơn
+   (đã giải phóng reservation) — phải xử lý tường minh: refund/void qua provider, hoặc
+   re-order; đừng revive đơn đã cancel bằng setState.
+7. **Paid/captured thì KHÔNG auto-cancel**: trước khi cancel bất kỳ đơn pending nào, kiểm
+   tra invoice/transaction — nếu tiền đã capture mà cancel → mất đồng bộ tồn kho/tiền.
+8. **Multi-attempt state model tường minh**: khách có thể retry payment nhiều lần cho 1
+   quote/order — mỗi attempt là 1 transaction record riêng; state cuối = theo transaction
+   thành công mới nhất, không theo attempt cuối cùng bất kể kết quả.

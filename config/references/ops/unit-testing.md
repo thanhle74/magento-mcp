@@ -16,6 +16,8 @@ Nguồn:
 
 ---
 
+> Từ khóa tra cứu: unit test mock, dataProvider, realistic persisted data, Event magic getter mock, runtime proof.
+
 ## 1) Lệnh chạy nhanh (copy dùng ngay)
 
 ## A. Unit tests (toàn bộ)
@@ -258,7 +260,51 @@ Nguyên tắc:
 
 ---
 
-## 9) Semantic Version Checker (SVC) - khi nên dùng
+## 9) Dữ liệu test phải đúng dạng persisted thực của Magento (bài học runtime)
+
+Unit test dựng data tự chế có thể pass 100% nhưng sai ở runtime vì **dạng persisted thật**
+khác giả định:
+
+| Dữ liệu | Dạng persisted đúng |
+|---|---|
+| `catalog_category_entity.path` | `1/<rootId>/<childId>/...` — bắt đầu bằng TREE_ROOT_ID=1, root của store group thường ≠ 1 |
+| `url_rewrite` | theo `store_id`; có thể KHÔNG có row cho một store |
+| `core_config_data` | `scope` (`default/website/stores`) + `scope_id` (0 = default) |
+| Order lookup | `OrderRepository::get()` nhận `entity_id`, KHÔNG nhận `increment_id` (xem [../../glossary.md](../../glossary.md)) |
+| MSI | `inventory_source_item` / `inventory_reservation`; `cataloginventory_stock_item` là legacy |
+
+Khi mock repository/collection cho các entity trên: fixture phải mang đúng dạng bảng —
+không "đơn giản hóa" format rồi coi test là bằng chứng hành vi thật.
+
+Mock **Event** của Magento (`Magento\Framework\Event`): getter như `getObject()` là
+**magic method** — `createMock(Event::class)` không configure được
+(MethodCannotBeConfiguredException). Dùng builder:
+
+```php
+$event = $this->getMockBuilder(\Magento\Framework\Event::class)
+    ->disableOriginalConstructor()
+    ->addMethods(['getObject'])
+    ->getMock();
+$event->method('getObject')->willReturn($identityObject);
+```
+
+## 10) Runtime proof cho thay đổi framework-sensitive
+
+Mock-heavy unit test chỉ chứng minh **call được thực hiện**, không chứng minh **hành vi
+framework thật** (vd: mock assert `clean($mode, $tag)` được gọi — runtime lại no-op vì
+hợp đồng `App\Cache\Proxy` khác; xem
+[../infrastructure/cache-management.md](../infrastructure/cache-management.md) §2).
+
+Quy tắc bounded — với thay đổi framework-sensitive (cache backend, event dispatch, DI
+wiring, indexer), sau khi unit test green, chứng minh bằng MỘT runtime probe có kiểm soát:
+
+- Cache: save entry thật → trigger invalidation thật → xác nhận entry biến mất (redis
+  `SCAN`/`MONITOR`, hoặc curl 2 lần quan sát MISS→HIT).
+- Event: 1 script dùng `EventManager::dispatch` thật.
+- Giới hạn (bounded): chỉ chạm dữ liệu do mình tạo, có cleanup hoàn toàn sau probe —
+  không cần E2E đầy đủ cho mọi task.
+
+## 11) Semantic Version Checker (SVC) - khi nên dùng
 
 SVC dùng để phát hiện thay đổi phá vỡ tương thích ngược (backward compatibility) ở mức semantic/API.
 

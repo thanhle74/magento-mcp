@@ -213,7 +213,22 @@ location /graphql {
 
 ---
 
-## 4. Verify steps
+## 4. Phân trách nhiệm Edge vs Magento (architecture guidance)
+
+Rate limiting hiệu quả đặt ở **tầng gần client nhất** — trước khi request chạm PHP:
+
+| Tầng | Làm gì | Không làm gì |
+|---|---|---|
+| CDN / WAF (Cloudflare, Fastly) | Rate limit theo IP, bot filtering, DDoS layer 3/4 | Không hiểu semantics đơn hàng |
+| Nginx / reverse proxy | `limit_req` per-IP cho `/rest/`, `/graphql/`, custom public routes; 429 + `Retry-After` | Không authorize user |
+| Magento (application) | Input validation, bounds (page size, filter count, q length), auth/ACL, kill-switch config, backpressure (payment) | Không là tuyến phòng thủ rate-limit duy nhất — mỗi request bị từ chối vẫn tốn bootstrap Magento |
+
+Nguyên tắc: khi một route public có chi phí backend cao, tầng edge phải chặn volume;
+Magento giữ vai trò **validation + bounds + security + kill switch** (vd config
+`enabled` per store). Thiếu edge limit không phải bug code — là config infra cần báo
+cho devops, đừng "bù" bằng sleep/counter trong PHP.
+
+## 5. Verify steps
 
 ```bash
 # Kiểm tra rate limiting config

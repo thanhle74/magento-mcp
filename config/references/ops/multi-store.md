@@ -4,6 +4,8 @@ Nguồn: https://experienceleague.adobe.com/en/docs/commerce-operations/configur
 
 ---
 
+> Từ khóa tra cứu: config scope, website, store view, store group, root category, category path, url rewrite store scope, store-scoped.
+
 ## 1. Store Hierarchy
 
 Magento có 4 cấp scope:
@@ -212,6 +214,46 @@ foreach ($this->storeManager->getStores() as $store) {
     }
 }
 ```
+
+---
+
+## 10. Root Category & Category Path — semantics từng store group (bài học runtime)
+
+- Cây category có **TREE_ROOT_ID = 1** (`Magento\Catalog\Model\Category::TREE_ROOT_ID`)
+  — node "1" là gốc toàn cây, KHÔNG phải category hiển thị. (Hằng `ROOT_CATEGORY_ID = 0`
+  là ID của "Root Catalog" khái niệm legacy/Admin — đừng nhầm khi lọc path.)
+- Mỗi **store group** có root category riêng (`store_group.root_category_id`,
+  `GroupInterface::getRootCategoryId()`) — thường ≠ 1. Đừng mặc định root = 1 khi lọc cây
+  category cho store: lấy `root_category_id` của store group rồi lọc theo đó.
+- Cột `catalog_category_entity.path` có format `1/<rootId>/<childId>/...` (materialized
+  path, slash-separated ancestor chain). Lấy subtree của root R: filter
+  `path LIKE '1/<R>/%'`. Đây là dạng persisted — test phải dựng đúng format này, không
+  dựng path tự chế.
+- **Không cho cross-root leakage**: khi build category tree/selector cho store, luôn giới
+  hạn trong path prefix của root của store group đó — nếu không, category của store khác
+  (cùng cây 1/) sẽ lọt vào kết quả.
+- Tránh N+1: tải subtree bằng MỘT collection load với path filter, không gọi
+  `CategoryRepository::get()` từng node.
+
+## 11. URL rewrite là dữ liệu store-scoped
+
+Bảng `url_rewrite` có cột `store_id` — cùng entity có thể có rewrite row ở store này và
+**không có** ở store khác (hoặc khác target_path). Hệ quả khi code build URL từ rewrite:
+
+- **Không tự sinh/fabricate URL** khi thiếu row: thiếu rewrite là **vấn đề dữ liệu**
+  (data issue — cần reindex URL Rewrite / sửa merchant data), không phải việc code nên
+  "đoán" URL. Trả null/omit field thay vì tự ghép.
+- Khi review một URL sai: phân loại **data-vs-code** trước khi patch — trace row
+  `url_rewrite` thực tế theo `entity_id + entity_type + store_id` trước khi sửa code.
+- Rewrite lookup luôn kèm store scope của request, không dùng store mặc định ngầm.
+
+## 12. Config scope — không phụ thuộc "current store" ngầm
+
+- `ScopeConfigInterface::getValue($path)` không truyền scope → lấy theo **current store của
+  request**. Trong cron/CLI/queue consumer không có "current store" như frontend — phải
+  emulate (§4/§9) hoặc truyền tường minh `$scopeType + $scopeId`.
+- Đọc config theo đúng scope đã lưu: giá trị có thể set ở default (`scope_id=0`), website,
+  hoặc store_view; đọc sai scope trả giá trị kế thừa khác merchant intent.
 
 ---
 

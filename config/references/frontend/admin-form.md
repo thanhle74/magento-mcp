@@ -8,6 +8,8 @@ Nguồn:
 
 ---
 
+> Từ khóa tra cứu: admin form, ui-select, categories selector Product Edit, category picker, ui component form.
+
 ## 1. Cấu trúc Admin Form
 
 ```
@@ -408,6 +410,24 @@ class SaveButton implements ButtonProviderInterface
 - Dùng `reverseMetadataMerge: true` trong form argument để tránh conflict khi extend form từ module khác
 - Dynamic rows data được serialize thành JSON trong request — cần deserialize trong controller/model
 - Với collapsible fieldset, `opened: false` giúp form load nhanh hơn khi có nhiều fields
+
+## 9. Category selector — tái dùng UI pattern của core (bài học runtime)
+
+Magento Product Edit renders field **Categories** bằng pattern **ui-select**
+(component `Magento_Ui/js/form/element/ui-select`,
+elementTmpl `ui/grid/filters/elements/ui-select`) — xem bằng chứng core:
+`Magento_Catalog/Ui/DataProvider/Product/Form/Modifier/Categories.php` (field
+`category_ids`). Website picker cũng dùng ui-select (`Modifier/Websites.php`).
+
+Khi cần field "chọn N entity từ tree/list" trong admin form:
+
+- **Dùng ui-select** (hoặc select component core tương đương) + data provider —
+  KHÔNG tự dựng widget jstree/tree riêng: phụ thuộc thêm, lệch UX chuẩn Magento,
+  khó maintain qua upgrade.
+- Cần tree data: DataProvider trả danh sách phẳng có `path`/level để component
+  render indent — không cần cây lồng nhau.
+- Filter theo scope: chỉ trả category trong root của store group hiện tại
+  (xem [../ops/multi-store.md](../ops/multi-store.md) §10).
 
 ---
 

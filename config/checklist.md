@@ -134,6 +134,35 @@
 - [ ] Verify steps trong spec/task contract của dự án đã chạy — ghi Pass/Fail
 - [ ] Blockers cập nhật trong spec/task contract của dự án hoặc báo cáo cuối
 
+### Phân loại severity khi review
+
+| Severity | Ý nghĩa | Hành động |
+|---|---|---|
+| **P0 / BLOCKER** | Sai correctness, security hole, mất tiền/dữ liệu, sai hợp đồng framework (vd cache no-op, callback chưa verify chữ ký) | Phải sửa trước khi merge |
+| **P1 / RECOMMENDATION** | Nên sửa trong scope task — perf (N+1), thiếu invalidation một nguồn dữ liệu, thiếu runtime proof cho thay đổi framework-sensitive | Sửa hoặc ghi follow-up có owner |
+| **P2 / INFORMATIONAL** | Ghi nhận, không chặn — style, naming, cải tiến infra (edge config) | Note trong báo cáo |
+
+> Quy ước: đánh cả hai nhãn (P0/P1/P2 và BLOCKER/RECOMMENDATION/INFORMATIONAL) để client
+> nào sort theo nhãn nào cũng đọc được.
+
+## 13. Root-cause & runtime evidence (bổ sung 2026-08)
+
+- [ ] Trước khi patch một hành vi sai: phân loại **data-vs-code** — trace dữ liệu persisted
+  thật (config theo scope → entity → eligibility → rewrite → cache) trước khi kết luận code sai;
+  nếu là data issue → báo data fix, không "bù" bằng code
+- [ ] Module có response/DTO cache tự build: invalidation phủ **mọi nguồn dữ liệu** đi vào
+  entry (product, pricing, MSI stock qua `clean_cache_by_tags`, url_rewrite, config, CMS);
+  nguồn không chứng minh được → TTL có giới hạn + ghi rõ tradeoff (xem
+  `references/infrastructure/cache-management.md` §10)
+- [ ] Gọi `CacheInterface::clean()` luôn truyền **mảng tag thuần** (hợp đồng
+  `App\Cache\Proxy`) — cấm cú pháp Zend `clean($mode, $tags)`
+- [ ] Unit test dùng fixture đúng **dạng persisted thực** (category path `1/<root>/<child>`,
+  url_rewrite per-store, config scope/scope_id) — không tự chế format
+- [ ] Thay đổi framework-sensitive (cache/event/DI/indexer): sau unit test, có **runtime
+  proof bounded** (thay đổi do mình tạo + cleanup hết) — không chỉ bằng mock
+- [ ] Admin UI: tái dùng component core (ui-select cho picker category/website...), không
+  tự dựng widget tree riêng
+
 ---
 
 > Khi có dấu hỏi về cách implement: tra `magento-patterns.md` → đọc reference tương ứng.
