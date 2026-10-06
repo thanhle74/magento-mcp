@@ -116,7 +116,9 @@ Khi khởi tạo, `uiElement` sẽ tự động thực hiện:
 
 ## Liên kết
 - [How-to & Debug (category form, custom UI, giá, UrlInput, …)](./ui-components-howto.md)
-- [Thư viện Linh kiện (Button, ActionsColumn, Bookmarks)](./ui-component-library.md)
+- [Thư viện Linh kiện — Form (input, dynamic rows, uploader)](./ui-library-form.md)
+- [Thư viện Linh kiện — Grid (cột, filters, toolbar, paging)](./ui-library-grid.md)
+- [Thư viện Linh kiện — Shell (button, bookmarks, container, modal, tab)](./ui-library-shell.md)
 - [Thư viện JavaScript (uiClass, Element, Collection)](./ui-components-js-library.md)
 - [Cú pháp Template & Bindings](./ui-components-templates.md)
 - [PHP Modifiers (Metadata & Data Mod)](./ui-components-modifiers.md)

@@ -73,7 +73,7 @@ Nguồn: [Update the page URL type](https://developer.adobe.com/commerce/fronten
 
 **Backend:** controller **search** (query phân trang, trả `options` + `total`), controller **get selected** (theo id — trả một option hoặc rỗng).
 
-Chi tiết đầy đủ trong doc; xem thêm [UrlInput trong thư viện](./ui-component-library.md) (§24.F).
+Chi tiết đầy đủ trong doc; xem thêm [UrlInput trong thư viện](./ui-library-form-composite.md) (§24.F).
 
 ---
 
@@ -110,7 +110,7 @@ Ví dụ: `ko.contextFor($0).$data` — truy cập view model field (vd. `name` 
 | Debug | [debug](https://developer.adobe.com/commerce/frontend-core/ui-components/debug) |
 
 - Kiến trúc tổng quan: [ui-components.md](./ui-components.md)
-- Thư viện component: [ui-component-library.md](./ui-component-library.md)
+- Thư viện component: [ui-library-form.md](./ui-library-form.md) · [ui-library-grid.md](./ui-library-grid.md) · [ui-library-shell.md](./ui-library-shell.md)
 - JavaScript init scripts (`x-magento-init`, `data-mage-init`): [javascript-init-scripts.md](./javascript-init-scripts.md)
 
 ---
