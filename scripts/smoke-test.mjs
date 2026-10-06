@@ -58,6 +58,18 @@ check(
   init.result?.capabilities?.tools !== undefined &&
     init.result?.capabilities?.prompts !== undefined
 );
+
+// VERSION in src/index.js must not drift from package.json
+const { readFile: fsReadFile } = await import("node:fs/promises");
+const pkgVersion = JSON.parse(
+  await fsReadFile(path.join(root, "package.json"), "utf-8")
+).version;
+check(
+  "server version matches package.json",
+  init.result?.serverInfo?.version === pkgVersion,
+  `${init.result?.serverInfo?.version} vs package.json ${pkgVersion}`
+);
+
 send({ jsonrpc: "2.0", method: "notifications/initialized" });
 
 // 1. tools/list — 5 tools
@@ -101,12 +113,30 @@ check(
   searchText.split("\n")[0]
 );
 
-// 6. large file gets size warning
-const big = await call("tools/call", {
-  name: "get_pattern_reference",
-  arguments: { path: "frontend/ui-component-library.md" },
-});
-check("large file gets size warning", big.result.content[0].text.startsWith("> ⚠️"));
+// 6. size discipline: no reference file exceeds the 30KB token guard
+const fsMod = await import("node:fs/promises");
+const pathMod = await import("node:path");
+const refsRoot = pathMod.join(root, "config", "references");
+const walkMd = async (dir) => {
+  const out = [];
+  for (const e of await fsMod.readdir(dir, { withFileTypes: true })) {
+    const p = pathMod.join(dir, e.name);
+    if (e.isDirectory()) out.push(...(await walkMd(p)));
+    else if (e.name.endsWith(".md")) out.push(p);
+  }
+  return out;
+};
+const allRefFiles = await walkMd(refsRoot);
+let largest = { size: 0, rel: "" };
+for (const f of allRefFiles) {
+  const { size } = await fsMod.stat(f);
+  if (size > largest.size) largest = { size, rel: pathMod.relative(root, f) };
+}
+check(
+  "reference size discipline (largest ≤ 30KB guard)",
+  largest.size <= 30 * 1024,
+  `largest: ${largest.rel} = ${largest.size}B`
+);
 
 // 7. references listing has no deleted files
 const list = await call("tools/call", { name: "get_pattern_reference", arguments: {} });
@@ -157,6 +187,78 @@ check(
 check(
   "review prompt does not teach Critical/High/Medium/Low gate",
   !/Critical\s*\/\s*High/.test(reviewText)
+);
+
+// 13. get_team_standards part=checklist loads only the checklist
+const partChecklist = await call("tools/call", {
+  name: "get_team_standards",
+  arguments: { part: "checklist" },
+});
+const partText = partChecklist.result.content[0].text;
+check(
+  "get_team_standards part=checklist loads only checklist",
+  partText.includes("Review gate") === false || partText.length < 20000,
+  `${partText.length} bytes`
+);
+check(
+  "part=checklist excludes constitution body",
+  !partText.includes("Object Readiness")
+);
+
+// 14. get_team_standards unknown part → isError with valid values
+const badPart = await call("tools/call", {
+  name: "get_team_standards",
+  arguments: { part: "nope" },
+});
+check(
+  "get_team_standards unknown part → isError",
+  badPart.result.isError === true &&
+    badPart.result.content[0].text.includes("constitution")
+);
+
+// 15. read_spec_file offset/limit slice
+const slice = await call("tools/call", {
+  name: "read_spec_file",
+  arguments: { path: "config/constitution.md", offset: 56, limit: 8 },
+});
+const sliceText = slice.result.content[0].text;
+check(
+  "read_spec_file slice returns bounded lines with header",
+  sliceText.startsWith("# config/constitution.md — lines 56-63 of") &&
+    sliceText.split("\n").length <= 12 // header + blank + 8 sliced lines
+);
+
+// 16. search_standards scope=references + multi-term AND
+const scoped = await call("tools/call", {
+  name: "search_standards",
+  arguments: { query: "webhook payment", scope: "references" },
+});
+const scopedText = scoped.result.content[0].text;
+check(
+  "search scope=references multi-term AND works",
+  scopedText.includes("config/references/") &&
+    !scopedText.includes("examples/") &&
+    scopedText.includes("[") // heading context present
+);
+
+// 17. grouped reference listing carries 'dùng khi' summaries
+const listing = await call("tools/call", { name: "get_pattern_reference", arguments: {} });
+const listingText = listing.result.content[0].text;
+check(
+  "reference listing grouped with summaries",
+  listingText.includes("## core (") &&
+    listingText.includes("— Plugin (Interceptor):")
+);
+
+// 18. section-level fallback: terms spread across lines of one section
+const sectionFallback = await call("tools/call", {
+  name: "search_standards",
+  arguments: { query: "plugin sortOrder conflict" },
+});
+const sfText = sectionFallback.result.content[0].text;
+check(
+  "search section-level fallback finds spread terms",
+  sfText.includes("magento-patterns.md") && sfText.includes("L33")
 );
 
 clearTimeout(timeout);
