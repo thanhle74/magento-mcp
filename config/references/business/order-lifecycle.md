@@ -276,9 +276,58 @@ $order = $this->orderRepository->get($incrementId);
 
 ---
 
+## 9. Gotchas refund path — FQCN, mock traps, recovery cron
+
+### 9a. Interface đúng: `Magento\Sales\Api\Data\CreditmemoInterface`
+
+`Magento\Sales\Api\CreditmemoInterface` **không tồn tại** — import sai làm plugin type-hint
+crash **mọi refund online trên admin** với `TypeError` lúc runtime. Signature thật trong
+2.4.8-p5:
+
+```php
+// Magento\Sales\Model\Service\CreditmemoService
+public function refund(\Magento\Sales\Api\Data\CreditmemoInterface $creditmemo, $offlineRequested = false);
+```
+
+Verify signature thật trong vendor trước khi viết plugin — không đoán từ tên class.
+
+### 9b. Mock traps trên refund path
+
+- `InvoiceInterface` không khai báo `getId()` (chỉ `getEntityId()`); `CreditmemoInterface`
+  không khai báo `getInvoice()`/`getOrder()` — method không có trên interface thì
+  `createMock(interface)` không stub được; cần gì phải mock concrete `Order\Creditmemo` /
+  `Order\Invoice`.
+- Kiểm interface thật (`vendor/magento/module-sales/Api/Data/...`) trước khi mock — không
+  assume magic getter tồn tại ở tầng interface.
+
+### 9c. Recovery cron (IPN-lost) — atomic claim + budget cột riêng
+
+Thứ tự bắt buộc:
+
+1. **Selection bounded**: state `active`/`paid`, chưa bind order, chưa quarantine, còn budget,
+   quá window.
+2. **Atomic claim UPDATE trước HTTP** (`Zend_Db_Expr`, tận dụng left-to-right SET evaluation
+   của MySQL) — nhiều node không được query provider cùng lúc cho 1 attempt; query gateway
+   chạy NGOÀI DB transaction (xem [../core/transaction-side-effect-cleanup.md](../core/transaction-side-effect-cleanup.md) §6).
+3. Route outcome qua **đúng cùng lifecycle service/finalizer** như IPN/Return — không sinh
+   finalizer thứ hai (2 điểm finalize = double order).
+
+Budget recovery:
+
+- `retry_count` của quote **không tái sử dụng được** làm recovery budget — nó là số attempt
+  trước đó của quote, set 1 lần lúc tạo, không tăng.
+- Thêm cột **additive**: `recovery_attempts` (budget đếm) + `recovery_exhausted` (marker) qua
+  schema patch riêng — không đổi nghĩa cột cũ.
+- Exhaustion marker là **operational-only**: hết budget → quarantine + log critical; IPN hợp
+  lệ đến sau vẫn phải resolve được tiền.
+
+---
+
 ## Liên kết
 
 - Inventory MSI: xem [../inventory/inventory-msi.md](../inventory/inventory-msi.md)
 - Quote Totals: xem [quote-totals.md](./quote-totals.md)
+- Refund trong TX + classifier: xem [../security/payment-gateway.md](../security/payment-gateway.md) §20–§21, §24–§25
+- Recovery cron payment-first: xem [payment-first-checkout.md](./payment-first-checkout.md) §6
 - Glossary: xem [../../glossary.md](../../glossary.md)
 - Quy tắc chung: xem [../constitution.md](../../constitution.md)

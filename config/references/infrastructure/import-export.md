@@ -156,6 +156,28 @@ $this->connection->insertOnDuplicate(
 
 ---
 
+## 9. Sync với hệ ngoài — match theo name gây duplicate; chống "giằng co" bằng source-history
+
+Hai gotcha khi cron sync category/attribute từ hệ ngoài (ERP, PIM) vào Magento:
+
+**Match theo NAME là nguồn duplicate kinh điển.** Name không unique, thay đổi được, và
+thõng dấu/khoảng trắng. Import match "theo tên đã có chưa" tạo bản sao khi: name bị sửa
+một phía, hai branch cùng tên, hoặc Unicode khác form (precomposed vs combining — mắt
+thấy giống, byte khác). Quy tắc: sync phải match bằng **mã ngoại (external id) lưu ở
+một cột/attribute riêng**, tạo mới chỉ khi mã chưa tồn tại — name chỉ là dữ liệu hiển thị.
+
+**Cron hai phía ghi đè nhau ("giằng co").** Cron A đồng bộ Magento → hệ ngoài theo snapshot,
+cron B đồng bộ chiều ngược lại — hai cron thấy trạng thái **lệch thời điểm** và ghi đè
+nhau luân phiên, giá trị dao động vô hạn. Quy tắc:
+
+- **Normalize từ source-history** (log thay đổi của hệ nguồn, ví dụ updated_at/revision)
+  thay vì ghi đè mù theo lịch: mỗi cron chạy chỉ áp các thay đổi **mới hơn mốc đã xử lý**,
+  có đánh dấu watermark.
+- Một phía là nguồn chân truth cho mỗi field — không có field nào do cả hai cron ghi.
+- Ghi đè phải idempotent: chạy lại cùng input → cùng kết quả, không phát sinh update mới.
+
+---
+
 ## Liên kết
 - Data Patch: xem [data-schema-patch.md](../core/data-schema-patch.md)
 - Declarative Schema: xem [declarative-schema.md](../core/declarative-schema.md)

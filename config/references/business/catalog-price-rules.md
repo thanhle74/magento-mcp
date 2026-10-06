@@ -325,6 +325,26 @@ Stores > Configuration > Sales > Tax:
 
 ---
 
+## 7. Quote seam — Pricing framework KHÔNG chạm quote/cart (gotcha đắt giá)
+
+Custom price (flash sale, daily sale, membership price...) chỉ đụng Pricing framework phía
+trên thì **không bao giờ ảnh hưởng giá trong quote/cart/order**:
+
+- Quote đi `Product::getFinalPrice` → legacy `Type\Price::getFinalPrice` (event
+  `catalog_product_get_final_price`) — KHÔNG qua Price Pool của Pricing framework.
+- PDP/GraphQL `price_range` KHÔNG gọi `Type\Price::getFinalPrice`.
+- `catalog_product_price` indexer chỉ nhận special_price + catalog rule → giá runtime-fresh
+  (campaign có thời hạn) không nên đi qua indexer.
+
+Muốn giá custom áp CẢ display lẫn quote — chọc **2 seam** (chi tiết, consume/release events,
+quota ledger: xem [promotion-flash-sale.md](promotion-flash-sale.md)):
+
+1. **Display seam**: thêm price object vào catalog Pricing pool (như §2 phía trên).
+2. **Quote seam**: plugin `afterGetFinalPrice` trên `Magento\Catalog\Model\Product`, guard
+   `min($result, $customPrice)` — không bao giờ tăng giá.
+
+---
+
 ## Liên kết
 
 - Catalog product types: xem [catalog-product-types.md](./catalog-product-types.md)

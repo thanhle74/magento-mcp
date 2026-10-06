@@ -279,5 +279,6 @@ bin/magento cache:clean
 
 ## Liên kết
 
+- Kiến trúc notification multi-channel (channel-ownership, typed DTO — cấm array ở boundary, outbox idempotency): [config/references/infrastructure/notification-transactional-email.md](../../config/references/infrastructure/notification-transactional-email.md)
 - Patterns: [config/magento-patterns.md](../../config/magento-patterns.md)
 - Events/Observers: [config/references/core/events-observers.md](../../config/references/core/event-observer-patterns.md)

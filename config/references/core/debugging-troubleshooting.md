@@ -485,6 +485,130 @@ xdebug.profiler_output_name=cachegrind.out.%p
 
 ---
 
+## 12. Prod investigation protocol (prod của khách)
+
+Prod của khách = **READ-ONLY tuyệt đối**: chỉ SELECT và đọc log. Không UPDATE, không flush cache, không restart service.
+
+- Output của phiên điều tra = **runbook + lệnh config** đưa owner tự chạy ngoài khung cron — không tự tay chạy thay đổi trên prod.
+- Report cho PM theo bảng 3 cột — ít thuật ngữ kỹ thuật:
+
+| Khách báo | Thực tế | Bằng chứng (ngày giờ, log) |
+|-----------|---------|---------------------------|
+| "Đơn không tạo được" | Payment callback trả 502 do timeout gateway | `exception.log` 2026-03-14 10:32:11, trace ... |
+
+- Kèm **draft tiếng Anh** cho khách (PM duyệt rồi mới gửi).
+- Trước khi hứa gì: phân biệt **bug-fix (warranty)** vs **new-dev (báo giá)** — điều tra xong mới kết luận thuộc loại nào, không hứa trước khi có bằng chứng root cause.
+
+### Self-check bắt buộc trước khi kết luận (lỗi thật từng gặp)
+
+1. **Log format sai là kết luận sai**: `error_log` dùng format `[Wed Sep 29 08:19:46]` trong khi `access_log` dùng `29/Sep/2026` — grep error_log bằng format của access_log cho ra "log trống" vô nghĩa. Grep đúng format trước khi kết luận "không có lỗi".
+2. **Verify hostname TRƯỚC khi sửa config** — dễ sửa nhầm server khác trong cụm (`*-admin` vs `*-prod`); chạy `hostname` + `nginx -T` để xác nhận server/target đang đứng.
+3. **Kích thước response là dấu vân tay**: 503 trả đúng **299 bytes** = error page mặc định Apache — request chưa chạm Magento; lỗi thuộc FPM/mod_security/proxy layer (xem [../ops/web-server-config.md](../ops/web-server-config.md) §3).
+
+---
+
+## 13. Config semantics: `null` vs `''` (allowlist config)
+
+`ScopeConfigInterface::getValue()` trả về **`null`** → chưa cấu hình ở scope này → **default trong `config.xml` được áp**. Ngược lại lưu tường minh **`''`** (chuỗi rỗng) → giá trị rỗng **THẬT** — ví dụ allowlist trống nghĩa là chặn hết.
+
+Hai trạng thái khác nhau hoàn toàn về nghiệp vụ. Bug hay gặp với config allowlist: code kiểm tra `empty($value)` thay vì `$value === null`, khiến "allowlist trống" bị nuốt thành "dùng default" — hành vi ngược đời với admin đã chủ động để trống. Khi đọc config allowlist: phân biệt `null` (fallback default) và `''` (rỗng có chủ đích).
+
+---
+
+## 14. `phpcs:disable` directive phải bare
+
+```php
+// ❌ Sai — prose sau sniff name làm directive bị IGNORE
+// phpcs:disable Generic.Files.LineLength vì report cần ghi dòng dài
+
+// ✅ Đúng — directive bare, giải thích đặt dòng riêng
+// phpcs:disable Generic.Files.LineLength
+```
+
+PHP_CodeSniffer parse directive dạng chính xác `phpcs:disable <sniff...>`; chữ prose ngay sau tên sniff làm cả directive bị ignore — file vẫn bị báo lỗi dòng dài dù "đã disable". Cmt giải thích đặt ở dòng riêng bên trên/dưới.
+
+---
+
+## 15. PageBuilder content biến mất âm thầm — PCRE backtrack
+
+Triệu chứng: content PageBuilder (`~47KB`) render **rỗng hoàn toàn**, không lỗi 500, không exception rõ ràng.
+
+Root cause: plugin third-party (vd Mirasvit SeoAutolink `addLinks()`) chạy `preg_replace_callback` với pattern thiếu delimiter space (vd `#<a(.+)((\s)+(.+))+\/a>#iU` — khớp cả `<article`) → **backtrack limit nổ** trên content lớn → `preg_replace_callback` trả **NULL** → content rỗng, im lặng.
+
+Diagnostic & fix:
+
+```php
+$result = preg_replace_callback($pattern, $cb, $content);
+if ($result === null) {
+    // preg_last_error() = PREG_BACKTRACK_LIMIT_ERROR (2)
+    var_dump(preg_last_error()); // chỉ chạy local/staging
+}
+```
+
+1. Check `preg_last_error()` ngay sau hàm preg — `NULL` return là dấu hiệu kinh điển.
+2. Fix: đổi tag trong pattern cho hợp lệ (`article` → `div` content bọc ngoài) hoặc sửa pattern (thêm space delimiter `<a\s`, giảm nested group).
+3. **Kiểm chứng trên content MỚI trước khi đẩy vào DB** — đừng verify trên content đã bị cắt.
+
+---
+
+## 16. Cloudflare edge cache khi debug FPC
+
+Trước khi kết luận "cache Magento serving stale", check response header **`CF-Cache-Status`**:
+
+- `HIT` — edge Cloudflare serve bản cached, request **chưa chạm origin** → Magento FPC sạch vẫn thấy nội dung cũ.
+- `MISS` — request đi tới origin, khi đó mới là chuyện của Magento FPC/varnish.
+
+Quy trình debug cache sai nội dung: bật chế độ dev/purge edge cache Cloudflare trước, rồi mới flush FPC Magento — nếu chỉ flush Magento mà quên edge, sẽ chốt sai root cause.
+
+---
+
+## 17. PHP-FPM slow log — phân biệt nạn nhân và thủ phạm
+
+Bật `request_slowlog_timeout 10s` rồi **phân loại trace theo signature + timestamp**,
+đừng quy kết theo trực giác hay tải tổng:
+
+Case thực chiến (sập 14:30): **73 slow traces cùng signature** CatalogWidget "Products by
+SKU" (`FIND_IN_SET` full scan bảng EAV text ~4.4GB/2.7M rows không index) bùng phát đúng
+khung giờ campaign email — đây là **thủ phạm cấp tính**. Trong khi resolver khác chạy
+~300ms × 29,450 calls/ngày — tải nền mạn tính — có **0 slow trace** → chỉ là nạn nhân bị
+quy kết oan.
+
+Quy tắc triage:
+
+1. Gom slow trace theo signature (file+line) và đối chiếu timestamp với sự kiện bên ngoài
+   (campaign, cron burst, deploy) — thủ phạm = signature bùng phát đồng thời.
+2. Trace tần suất cao nhưng không vượt slow-log threshold = tải nền; đừng chữa trước khi
+   chữa thủ phạm cấp tính.
+3. Symptom thường gặp cấp thứ cấp (đừng chốt là root cause): query `url_rewrite` dồn dập,
+   Redis session lock (`Cm\RedisSession\Handler.php`).
+
+---
+
+## 18. Category `setPath` thiếu suffix `/{id}` — menu sập toàn trang
+
+`$category->setPath($parent->getPath())` trước `categoryRepository->save()` lưu path
+`1/2/31` **thiếu đuôi `/{id}`**. Hệ quả dây chuyền:
+
+```
+path sai → getChildren() (chạy bằng path LIKE 'parent/%') trả ""
+         → explode(',', "") ra ['']  (mảng 1 phần tử chuỗi rỗng!)
+         → categoryRepository->get('') → NoSuchEntityException
+         → uncaught trong block render → production nuốt exception, render block rỗng
+```
+
+→ mất trắng cả menu/main navigation, không có 500 để thấy (developer mode thì 500).
+
+Quy tắc:
+
+1. **Không bao giờ tự set path thủ công** — để core sinh path khi save.
+2. Block render gọi repository `get()`: bọc try/catch + check rỗng
+   (`trim($children) === ''` → trả về sớm) — không tin dữ liệu category "luôn đúng shape".
+3. Khi so sánh path trong script data-fix: idempotent bằng
+   `WHERE path NOT LIKE CONCAT('1/2/', ?, '/%')` (pattern script xem
+   [../ops/maintenance-cli.md](../ops/maintenance-cli.md) §11).
+
+---
+
 ## Liên kết
 
 - Logging: xem [../infrastructure/logging.md](../infrastructure/logging.md)

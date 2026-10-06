@@ -288,6 +288,21 @@ $event = $this->getMockBuilder(\Magento\Framework\Event::class)
 $event->method('getObject')->willReturn($identityObject);
 ```
 
+Khi cần vừa override method có thật vừa thêm magic method (PHPUnit 10+, builder chain):
+
+```php
+$mock = $this->getMockBuilder(ClassWithMagic::class)
+    ->disableOriginalConstructor()
+    ->onlyMethods(['getData'])      // method CÓ thật — override
+    ->addMethods(['getCustomAttr']) // magic method KHÔNG có trên class — thêm mới
+    ->getMock();
+```
+
+Lưu ý PHPUnit 10: `createMock()` không còn là điểm mở rộng toàn cục qua bootstrap như
+PHPUnit 9 — dùng `createStub()`/`createConfiguredMock()` của framework hoặc builder như
+trên; một số bootstrap Magento cũ vẫn map `createMock` thủ công, kiểm tra bootstrap của
+repo trước khi assume.
+
 ## 10) Runtime proof cho thay đổi framework-sensitive
 
 Mock-heavy unit test chỉ chứng minh **call được thực hiện**, không chứng minh **hành vi

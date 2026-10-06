@@ -4,7 +4,7 @@ Nguồn: https://developer.adobe.com/commerce/php/development/payments-integrati
 
 ---
 
-> Từ khóa tra cứu: payment gateway, redirect payment, return URL, callback, webhook, idempotent, signature verify, cron expiry.
+> Từ khóa tra cứu: payment gateway, redirect payment, return URL, callback, webhook, idempotent, signature verify, cron expiry, refund poll, m_refund_id, return_code sub_return_code, STATE_OPEN, validateForRefund.
 
 ## 0. Khởi tạo Module (module.xml)
 
@@ -153,16 +153,18 @@ Dùng `di.xml` để gom nhiều builder nhỏ lại.
 - **Client:** "Gửi hàng" đi (Sử dụng `Magento\Payment\Gateway\Http\Client\Zend` mặc định hoặc Custom Curl).
 
 ```php
-// Ví dụ trong TransferFactory
-public function create(array $request) {
+// Ví dụ trong TransferFactory — body HTTP phải qua Serializer\Json (constitution §2)
+public function create(array $request): \Magento\Payment\Gateway\Http\TransferInterface
+{
     return $this->transferBuilder
         ->setMethod(Curl::POST)
         ->setHeaders(['Content-Type' => 'application/json'])
-        ->setBody(json_encode($request))
+        ->setBody($this->serializer->serialize($request))
         ->setUri($this->getApiUrl())
         ->build();
 }
 ```
+> Inject `Magento\Framework\Serialize\Serializer\Json` qua constructor — không dùng `json_encode()` PHP trực tiếp cho request body nghiệp vụ.
 
 ---
 
@@ -458,3 +460,149 @@ VNPAY/MoMo/ZaloPay phải verify riêng trước khi viết vào spec).
 8. **Multi-attempt state model tường minh**: khách có thể retry payment nhiều lần cho 1
    quote/order — mỗi attempt là 1 transaction record riêng; state cuối = theo transaction
    thành công mới nhất, không theo attempt cuối cùng bất kể kết quả.
+
+---
+
+## 18. Global plugin trên `QuoteManagement` — DI isolation (gotcha đắt giá)
+
+Plugin đăng ký **global** trên `Magento\Quote\Model\QuoteManagement::placeOrder` (để guard
+theo payment method) chạy cho **mọi** payment method. Hai bẫy đã gây incident production thật:
+
+1. **DI chéo giữa các gateway**: constructor plugin inject `MethodInterface` chỉ để gọi
+   `getCode()` → cả Facade (Adapter + commandPool + HTTP client) của gateway A bị construct
+   khi gateway B đặt hàng — phí tài nguyên và nổ DI chéo nếu dependency của A chưa sẵn sàng.
+   **Quy tắc:** so sánh method code → inject **scalar `methodCode`** qua virtualType per
+   gateway; dependency nặng → `Proxy`. KHÔNG inject `MethodInterface` chỉ để đọc code.
+
+   ```xml
+   <!-- ✅ virtualType per gateway — scalar code, không construct Facade -->
+   <type name="Vendor\Momo\Plugin\PlaceOrderGuard">
+       <arguments>
+           <argument name="methodCode" xsi:type="const">Vendor\Momo\Model\Ui\ConfigProvider::CODE</argument>
+       </arguments>
+   </type>
+   ```
+
+2. **Thiếu `<preference>` → runtime fatal mà `setup:di:compile` KHÔNG bắt được**: interface
+   resolution chỉ chạy lúc runtime (lần interception đầu). Plugin + mọi service nó kéo theo
+   inject interface mới mà thiếu binding → "Cannot instantiate interface" giữa luồng đặt hàng.
+   **Quy tắc:** mọi class bị plugin global kéo vào phải có DI binding test (`Test/Unit/Di/`)
+   + runtime smoke trên môi trường thật; KHÔNG thêm preference suy đoán (runtime chứng minh
+   interface không bao giờ resolve thì đừng thêm binding chết).
+
+> Kiến trúc payment-first đầy đủ (attempt state machine, finalizer, IPN): xem
+> [payment-first-checkout.md](../business/payment-first-checkout.md)
+
+---
+
+## 19. Provider response không có signature — echo-of-exact-request
+
+Một số provider (vd MoMo query/refund v2) **không trả signature** trong response. Đừng assume
+signature tồn tại — verify tài liệu trước. Khi không có signature, identity = **echo của đúng
+request vừa gửi**:
+
+1. **Bind response với EXACT request vừa ký/gửi TRƯỚC khi đọc evidence fields** (`refundTrans`,
+   `transId`...): đối chiếu `partnerCode` + echo `orderId`/`requestId` + `amount` với chính
+   request vừa gửi — chống cross-request evidence confusion (response của attempt khác).
+2. **`requestId` query minted mới mỗi lần gọi** (vd `<order_ref>-Q<16 hex random>`), ký request
+   với chính giá trị đó; request_id create-time của attempt không bị đọc hay ghi đè.
+3. `partnerCode`: strict khi conflict, tolerant khi vắng mặt trong response.
+
+---
+
+## 20. Result-code classifier — fail-safe
+
+Quy tắc phân loại resultCode từ provider (Return path, Recovery cron, Refund):
+
+1. **Unknown / missing / unmapped code KHÔNG BAO GIỜ default FAILED** — chỉ explicit allowlist
+   mới được kết luận fail. Missing resultCode phải rơi vào nhánh "unknown" (retry/query lại),
+   không phải recordAuthoritativeFailure.
+2. **Pending vs paid là 2 allowlist riêng** theo contract từng API (vd MoMo: `0` = paid,
+   `7000/7002` = non-terminal pending — zero mutation, có regression test cho cả hai).
+3. **KHÔNG tái sử dụng classifier refund cho purchase** (cùng mã `9000` khác nghĩa giữa 2 API)
+   — extract shared classifier (vd `PurchaseQueryClassifier`) dùng chung Return + Recovery
+   paths để hết drift, và classifier riêng cho refund.
+4. **Provider trả resultCode dạng `int`** → so sánh với `?string` param gây TypeError ngầm.
+   Cast tường minh ngay đầu (`(string)$response['resultCode']`) — bug production thật đã bắt
+   được qua unit test.
+
+---
+
+## 21. Refund: gateway command chạy BÊN TRONG TX của `CreditmemoService`
+
+`CreditmemoService::refund()` mở DB transaction trên connection **`sales`** và chạy gateway
+refund command bên trong nó. **Rollback khi exception nuốt mất mọi ghi cùng connection** —
+bằng chứng refund FAILED/UNKNOWN biến mất đúng lúc cần nó nhất (reconciliation).
+
+1. **Ghi refund record qua connection độc lập** (`ConnectionFactory`-built PDO adapter, table
+   prefix xử lý thủ công) — evidence tồn tại xuyên suốt rollback.
+2. **Creditmemo entity id chưa được assign đến sau khi gateway command return** — không tham
+   chiếu `getEntityId()` trước đó (null).
+3. Online refund chỉ fire khi `canRefund() && getDoTransaction() && getInvoice()` — kiểm cả 3.
+4. **Budget guard chống double-refund sau TX rollback**: `sum(SUCCESS records) >
+   payment->getAmountRefunded()` → block submission mới (đóng hole khách nhận 2 lần tiền khi
+   lần 1 đã ghi entrance rồi bị rollback ởMagento nhưng provider vẫn hoàn).
+
+---
+
+## 22. `payment_action` config key — contract với core
+
+`payment/<code>/payment_action` là **contract key** — core đọc qua facade
+`getConfigPaymentAction()` → `Magento\Sales\Model\Order\Payment::place()`. Field admin viết
+key khác (vd `payment/<code>/<code>_action`) → **silently no-op**: không reader nào đọc,
+auto-capture không bao giờ chạy, không lỗi gì để thấy.
+
+1. Một constant duy nhất cho key config (`Model\Config::KEY_PAYMENT_ACTION = 'payment_action'`)
+   dùng chung cho `system.xml` + `config.xml` + reader.
+2. QC bắt buộc: save Payment Action trong Admin → verify giá trị land vào `core_config_data`
+   đúng path → verify behavior (authorize-only vs authorize_capture) qua log/command.
+
+---
+
+## 23. Logging & masking payment
+
+1. **Dùng core `Magento\Payment\Model\Method\Logger::debug()`** — tự gate theo
+   `payment/<code>/debug` + mask đệ quy qua `debugReplaceKeys`/`maskKeys`. KHÔNG viết logger
+   cạnh tranh; KHÔNG gate theo config tự chế.
+2. Credentials (public/secret key): log dạng **present/missing**, không bao giờ in giá trị.
+3. Provider response in qua **whitelist field** (`return_code`, `zp_trans_id`, `refund_id`,
+   `return_message`...) — MAC/signature trong response không bao giờ lọt ra log.
+4. Mask thêm PII (`app_user`, email, phone) và `key1`/secret tại mọi diagnostic CLI.
+
+---
+
+## 24. Refund không có IPN — poll query API, decision/message cùng một cột contract
+
+Một số provider (vd ZaloPay `/v2/refund`) **không có callback_url/IPN cho refund** → merchant
+tự chịu trách nhiệm biết kết quả hoàn tiền: cron poll query API (vd `POST /v2/query_refund`
+theo `m_refund_id`, schedule `*/15`) cho đến khi return_code final.
+
+Quy tắc đọc response:
+
+1. **Decision và message phải đọc CÙNG MỘT cột contract.** Bug thật: `RefundCommand` quyết
+   định từ `return_code` nhưng message hiển thị lấy từ `sub_return_code` → T+2s thấy
+   sub=2 ("đang xử lý") hiển thị "Refund failed." dù refund thực tế đang chạy rồi thành công
+   (probe T+8 phút `return_code=1`). Admin thấy fail giả → thao tác trùng gây double-refund.
+2. **Nghi fail thì luôn query lại provider trước khi kết luận** — một response chưa final
+   không đủ căn cứ recordAuthoritativeFailure (xem §20 classifier fail-safe).
+3. Schedule poll + query CLI phải đi qua đúng đường reconciliation chuẩn (re-sign qua
+   `Authorization::getMac`, decode `additional_information`) — không viết logic query thứ hai
+   song song dễ drift.
+
+---
+
+## 25. Creditmemo lifecycle: `STATE_OPEN` trước khi refund qua core
+
+Ràng buộc core 2.4.8-p5: `CreditmemoService::validateForRefund()` ném *"We cannot register an
+existing credit memo"* cho mọi creditmemo đã persist (`getId()`) mà `state != STATE_OPEN`.
+Flow **bind-then-refund** (persist creditmemo → gọi provider → mới `$proceed()` để core
+finalise) phải:
+
+1. Set `state = Creditmemo::STATE_OPEN` **ngay lúc persist đầu tiên** — để `state=NULL` là
+   mọi refund sync sau đó bị core chặn.
+2. KHÔNG set `STATE_REFUNDED` trước provider success; KHÔNG mutate `total_refunded`/
+   `qty_refunded` sớm — chỉ core `$proceed()` được làm điều đó sau khi gateway command thành
+   công (nếu không, rollback TX mà số liệu đã lệch — xem §21).
+3. Chứng minh bằng **real core stack** — gọi `CreditmemoService` thật trên môi trường có DB,
+   không chấp nhận mock `$proceed()` làm bằng chứng chính.
+

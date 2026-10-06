@@ -60,3 +60,63 @@ Khi thêm blueprint mới vào `examples/integration/`, cập nhật bảng trê
 - Tên file
 - Chủ đề ngắn gọn (≤ 5 từ)
 - Điều kiện "Dùng khi" (≤ 1 câu)
+
+---
+
+## Backlog (chưa có blueprint)
+
+> Chủ đề đã được xác định cần blueprint nhưng CHƯA có file trên disk. Khi tạo blueprint mới: viết file vào `examples/integration/`, thêm dòng vào bảng Integration Blueprints ở trên, rồi xóa dòng tương ứng ở đây. (Nguồn: `config/research-log.md`.)
+
+### Admin / Backend
+- Blueprint: Custom admin form với dynamic rows
+- Blueprint: Custom mass action trong admin grid (kèm confirmation)
+- Blueprint: Custom inline edit trong admin grid
+- Blueprint: Custom DataProvider cho admin grid / custom report grid
+- Blueprint: Custom report với chart (admin dashboard)
+- Blueprint: Custom UI Component field type
+- Blueprint: Custom system config field với custom renderer
+- Blueprint: Custom admin notification
+- Blueprint: Custom ACL resource + check trong controller
+- Blueprint: Custom layout handle + block injection
+- Blueprint: Plugin trên OrderRepository (add custom filter)
+- Blueprint: Before plugin validate input + throw exception
+- Blueprint: After plugin transform response data
+- Blueprint: Custom cron job với lock mechanism
+
+### Data layer
+- Blueprint: Custom collection với join + filter
+- Blueprint: Repository với custom SearchCriteria filter
+- Blueprint: Custom attribute (product/customer/category) với frontend renderer/source model
+
+### API
+- Blueprint: Custom GraphQL query với auth check
+- Blueprint: Custom GraphQL subscription
+- Blueprint: Custom REST endpoint với file upload
+- Blueprint: Custom REST bulk endpoint
+- Blueprint: Async bulk REST API endpoint
+- Blueprint: Webhook outbound với retry queue
+
+### Checkout / Sales
+- Blueprint: Custom checkout step (frontend + backend)
+- Blueprint: Custom checkout field (address + JS validation)
+- Blueprint: Custom checkout payment renderer (JS + PHP)
+- Blueprint: Custom checkout total collector
+- Blueprint: Custom tax rule / FPT
+- Blueprint: Custom cart price rule condition
+- Blueprint: Custom order PDF (invoice/packing slip)
+
+### Frontend / Catalog
+- Blueprint: Custom layered navigation filter
+- Blueprint: Custom configurable product swatch
+- Blueprint: Custom search adapter (OpenSearch)
+
+### DevOps
+- Blueprint: Varnish VCL cho Magento
+- Blueprint: RabbitMQ consumer với retry/dead letter
+- Blueprint: Zero-downtime deployment script
+- Blueprint: GDPR data export + anonymization
+- Blueprint: Multi-store config với store-specific override
+- Blueprint: Module với unit test + integration test đầy đủ
+- Blueprint: Custom fraud detection plugin
+- Blueprint: Multi-source inventory custom algorithm
+- Blueprint: Custom shipping rate với table rates override

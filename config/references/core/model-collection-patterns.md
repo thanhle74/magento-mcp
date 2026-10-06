@@ -430,6 +430,50 @@ do {
 
 ---
 
+## 6. Gotchas ORM: `_init()` lazy resolve và `setData(array)` hydration
+
+### 6.1 `_init()` resolve resource qua ObjectManager trong constructor (2.4.8)
+
+Override `_construct()` + `_init(ResourceModel::class)` vẫn hoạt động, nhưng nhớ rằng
+`_init()` resolve resource model **qua ObjectManager ngay trong constructor**. Khởi tạo
+model bằng reflection/empty-ctor trong test hoặc scaffolding sẽ **không chạy
+`_construct()`** → `_resourceName`/`_idFieldName` rỗng → `getId()` trả `null` ngầm.
+
+Fix khi dựng model thủ công (test, hydration helper): set thẳng
+
+```php
+$model->setResourceName(\Vendor\Module\Model\ResourceModel\Entity::class);
+// property protected: $_resourceName / $_idFieldName — khai trong constructor class thật
+```
+
+Đơn vị unit test mock collection không chứng minh được SQL shape — xem
+[search-criteria-data-layer.md](./search-criteria-data-layer.md) §8.
+
+### 6.2 `setData(array)` hydration không populate `_storedData` → `updated_at` đứng yên
+
+`AbstractModel::save()` chỉ ghi **dirty fields** so với `getStoredData()`. Nhưng
+`_storedData` chỉ được populate qua `afterLoad()`/`afterSave()`. Model hydrate thủ công
+bằng `setData($row)` (vd pattern `lockByAppTransId`) có `_storedData` **rỗng** → UPDATE
+ghi **toàn bộ cột**, kể cả giá trị `updated_at` cũ vừa hydrate → chặn
+`ON UPDATE CURRENT_TIMESTAMP` của MySQL → mất vết thời gian trên row (kiểm chứng thực
+nghiệm: save thành công, `updated_at` đứng yên).
+
+Fix — một trong hai:
+
+```php
+// (a) Unset updated_at khỏi data trước hydrate → core bỏ cột khỏi UPDATE
+unset($row['updated_at']);
+$model->setData($row);
+
+// (b) Populate storedData đúng quy trình: load qua collection/repository
+//     (afterLoad() set _storedData từ DB) thay vì setData tay
+```
+
+Quy tắc: model cần `updated_at` bump khi save → load bằng collection/repository rồi mới
+mutate, đừng hydrate mảng thô.
+
+---
+
 ## Liên kết
 
 - Service Contracts & Repository: xem [service-contracts.md](./service-contracts.md)

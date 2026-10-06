@@ -2,6 +2,13 @@
 
 Source: https://developer.adobe.com/commerce/frontend-core/page-builder/content-types/create/
 
+> ⚠️ **Warning — HTML Code content type & nội dung landing tự viết:**
+>
+> - Khi nhúng trang custom qua **HTML Code content type**, scope toàn bộ CSS trong **1 root class duy nhất** (vd `.slaunchpad-luxury-home`) — mọi selector phải nằm dưới root này để không rách style Admin PageBuilder và các block khác.
+> - Media path phải **store-relative** (`/media/...`), **KHÔNG hardcode `http://localhost/...`** — nếu không page copy 1-block sang môi trường khác sẽ ảnh gãy.
+> - **Validation gate trước khi gọi done:** (1) mở editor PageBuilder không broken serialization (content load nguyên vẹn, không lỗi KO), (2) FE trả HTTP 200, (3) check cả desktop + mobile viewport, (4) 0 console error, (5) **scroll đầy đủ trang** — ảnh lazy-load chỉ load khi vào viewport nên scroll nông gây false positive "broken".
+
+
 ## Structure
 
 Vendor/Module/
@@ -63,3 +70,25 @@ extend not function -> use Object.create prototypal
 master.html 404 -> create KO template file
 form loading -> check extends + source=page
 XSD errors -> translate=label, no group attr, master_template not template
+stage trắng trong admin (CSS custom) -> xem §Gotchas thực chiến dưới
+
+## Gotchas thực chiến
+
+### CSS `<style>` tag làm sập stage admin
+
+Inject `<style>` vào preview để render live CSS: khi CSS chưa parse xong,
+truy cập `styleSheet.cssRules` / `querySelector` trên nó trả **null** → exception trong
+preview.js → **stage trắng** toàn bộ editor PageBuilder (không chỉ content type mình).
+Fix: inject CSS dạng **JS string** (tạo text node / `style.sheet` thủ công) thay vì
+phụ thuộc parse `<style>` tag — kiểm soát được thời điểm CSS sẵn sàng.
+
+### `data-background-images` — escape trong DB dối khi debug
+
+- DB lưu giá trị với **single backslash** (`{"background-image":"url(...)"}` JSON string
+  trong attribute) — đọc bằng `mysql -N` (batch mode) thì output nhìn như
+  **double-escape**: đó là lie của hiển thị terminal/log, không phải nội dung thật.
+  So sánh chuỗi bằng app code hoặc `SELECT ... INTO` file, đừng so với output
+  `mysql -N` dán tay.
+- Media path trong attribute có **hash directory pattern** (`/media/ab/cd/<file>` từ
+  hash tên file) — khi so sánh/ghi đè path, hash phải tính lại từ tên file, không copy
+  path của record khác.

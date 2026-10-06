@@ -314,6 +314,37 @@ bin/magento setup:upgrade --data-restore=1
 
 ---
 
+## Data patch guard + lệch phiên bản whitelist
+
+### `isTableExists()` guard trong data patch (SQLSTATE 1146)
+
+Data patch thao tác bảng **module khác** hoặc bảng chỉ tồn tại sau schema patch phải
+guard — DB restored/roll-forward lệch thứ tự sẽ ném `1146 ... doesn't exist` giữa luồng
+`setup:upgrade`:
+
+```php
+if (!$schemaSetup->getConnection()->isTableExists($schemaSetup->getTable('vendor_topic'))) {
+    return; // hoặc throw có thông điệp — đừng để 1146 nổ mù
+}
+```
+
+### Lệch phiên bản `db_schema.xml` ↔ whitelist → DROP FK chưa từng tồn tại (1091)
+
+Deploy lên DB restore cũ làm cặp file schema/whitelist **lệch phiên bản**: whitelist
+quản lý element đã bị đổi tên/xóa trong XML → Magento emit `DROP FOREIGN KEY` cho FK
+DB chưa từng có → error **1091** dù DB "đúng". Không drop mò tay — query
+`information_schema.KEY_COLUMN_USAGE` xác nhận FK thật sự tồn tại trước. Playbook xử lý
+đầy đủ (audit, backup, atomic ALTER, chạy 2 lần): xem
+[../ops/deploy-troubleshooting.md](../ops/deploy-troubleshooting.md) §2.
+
+### Soi DDL thật trước `setup:upgrade`
+
+Sau khi đổi `db_schema.xml`: dump `SHOW CREATE TABLE` (hoặc `mysqldump --no-data` grep
+KEY/CONSTRAINT) so với declaration **trước khi** chạy `setup:upgrade` — diff cho biết
+Magento sẽ drop/tạo gì, thay vì đọc diff sau khi chạy xong.
+
+---
+
 ## Liên kết
 
 - Quy tắc chung: xem [constitution.md](../../constitution.md)

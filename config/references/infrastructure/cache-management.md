@@ -4,7 +4,7 @@ Nguồn: https://developer.adobe.com/commerce/php/development/cache/partial/
 
 ---
 
-> Từ khóa tra cứu: cache tag, clean_cache_by_tags, invalidation, ETag, 304, If-None-Match, MSI stock cache, CacheInterface clean, stale cache.
+> Từ khóa tra cứu: cache tag, clean_cache_by_tags, invalidation, ETag, 304, If-None-Match, MSI stock cache, CacheInterface clean, stale cache, block_html MISS, FPM exhaustion, CatalogWidget, cache_lifetime, FIND_IN_SET, finset.
 
 ## 1. Khai báo Cache Type mới
 
@@ -221,7 +221,7 @@ Cho phép trả về dữ liệu hết hạn (`stale`) trong lúc tiến trình 
 
 ---
 
-## 8. Varnish Cache & ESI (Edge Side Includes)
+## 9. Varnish Cache & ESI (Edge Side Includes)
 
 Varnish là giải pháp Page Cache khuyên dùng cho môi trường Production.
 
@@ -242,7 +242,7 @@ Tự động thêm version vào URL file tĩnh (JS, CSS) để Varnish có thể
 
 ---
 
-## 9. Kiểm tra trạng thái Cache (Headers)
+## 10. Kiểm tra trạng thái Cache (Headers)
 
 Luôn kiểm tra các Header sau để biết Cache có hoạt động hay không (chế độ Developer):
 - **X-Magento-Cache-Control**: `max-age=...` (Thời gian cache còn lại).
@@ -251,7 +251,7 @@ Luôn kiểm tra các Header sau để biết Cache có hoạt động hay khôn
 
 ---
 
-## 10. Cache tự build: invalidation phải phủ MỌI nguồn dữ liệu (bài học runtime)
+## 11. Cache tự build: invalidation phải phủ MỌI nguồn dữ liệu (bài học runtime)
 
 Khi module tự lưu response/DTO cache, tag invalidation phải phủ **mọi nguồn dữ liệu đi vào
 cache entry** — không chỉ nguồn "rõ ràng" nhất:
@@ -270,7 +270,7 @@ Nếu **không thể chứng minh** phủ được một nguồn: cache lifetime
 TTL, admin-tunable) — stale-correctness tradeoff phải là lựa chọn có chủ đích, không phải
 mặc định ngầm.
 
-## 11. ETag/304 ≠ tránh backend work
+## 12. ETag/304 ≠ tránh backend work
 
 `ETag` tính từ body **sau khi body đã được tính xong** (vd `sha1($body)`). 304 chỉ tiết kiệm
 **bandwidth**, không tiết kiệm computation của request đó. Ba tầng riêng biệt:
@@ -282,6 +282,52 @@ mặc định ngầm.
 | Edge | CDN/Varnish theo Cache-Control | cả request không chạm origin |
 
 Review: đừng ghi "ETag giảm tải server" — chỉ đúng khi kèm application cache hoặc edge cache.
+
+---
+
+## 13. block_html MISS storm → FPM exhaustion (chuỗi sự cố)
+
+Block lưu trong `block_html` mà **cache MISS** nghĩa là **mỗi request** render lại block trong
+FPM worker — kèm query nặng bên trong thì MISS × traffic cao = hết worker:
+
+```
+block MISS (lifetime=0 / key không hit)
+  → render block trong request PHP
+  → query nặng chạy lại mỗi request (FIND_IN_SET, join lớn, ...)
+  → FPM worker pool cạn → các request khác (kể cả health check) chờ/killed
+```
+
+Chẩn đoán theo thứ tự:
+
+1. **Hit rate `block_html`**: `bin/magento cache:status` + keyspace Redis (db `block_html`) —
+   hit rate thấp bất thường khi traffic ổn định là dấu hiệu MISS storm.
+2. **Slow log FPM** (`request_slowlog_timeout`) + MySQL slow log: block nào render nhiều lần
+   mỗi giây, query nào lặp — victim là FPM, **culprit thường là block MISS**, đừng kết án nhầm.
+3. **Widget/block với `cache_lifetime=0`** (hoặc không khai `cache_lifetime` trong `widget.xml`)
+   → không bao giờ vào cache — xem mục dưới.
+
+Fix: đặt `cache_lifetime` hợp lý cho widget/block, thêm `cache` section + identity đúng
+(§3), hoặc prefetch dữ liệu qua application cache thay vì query trong render.
+
+---
+
+## 14. CatalogWidget — `finset` (FIND_IN_SET) + `cache_lifetime`
+
+`catalog_products_list` (CatalogWidget) lọc SKU qua điều kiện `finset` → sinh
+`FIND_IN_SET(sku, :list)` trong SQL — **không dùng index được**, chi phí tuyến tính theo
+bảng sản phẩm, nặng hơn nhiều so với `in`/`eq`.
+
+- Widget có điều kiện SKU list mà `cache_lifetime=0` (không set trong `widget.xml` hoặc
+  instance widget) → **mỗi page view chạy lại FIND_IN_SET full-scan** — kết hợp với §13 là
+  công thức FPM exhaustion kinh điển trên PLP có nhiều widget.
+- Quy tắc: widget SKU-list **bắt buộc** khai `cache_lifetime > 0` trong `widget.xml`
+  (block của CatalogWidget hỗ trợ block cache) + cache key theo tham số (SKU list, category,
+  page) để không trả nhầm dữ liệu giữa các instance widget.
+- Cần lọc động theo nhiều SKU? Cân nhắc `in` trên attribute index được thay vì `finset` trên
+  varchar thuần.
+
+> Di cache compiled (`GLOBAL__DICONFIG`) và chuỗi "sửa di.xml nhưng output cũ" là chủ đề
+> deploy — xem [../ops/deploy-troubleshooting.md](../ops/deploy-troubleshooting.md).
 
 ---
 

@@ -483,6 +483,16 @@ class DebugPlugin
 - Object khởi tạo trước khi `Magento\Framework\Interception` bootstrap
 - Class implement `Magento\Framework\ObjectManager\NoninterceptableInterface`
 
+> **⚠️ `final class` là CẤM cho class có thể bị plugin (review gate):** Magento sinh
+> `...Interceptor extends <Class>` (plugins) và `...Proxy extends <Class>` (DI proxy)
+> trong `generated/code/` — `final` gây fatal
+> `Class ...Interceptor may not inherit from final class` ngay lúc compile/runtime, không
+> phải warning. Lỗi review thực chiến: `final class` xuất hiện cùng lúc với gọi
+> `$model->save()`/`->load()` trực tiếp thay vì Repository/ResourceModel,
+> `new \Zend_Db_Expr` (team cấm — dùng `Magento\Framework\DB\Sql\Expression`), và output
+> `.phtml` chưa escape (XSS). Nếu cần khóa API của class: `final` **method** riêng lẻ
+> (method không bị plugin) là lựa chọn duy nhất an toàn.
+
 **Naming convention:**
 
 ```

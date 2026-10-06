@@ -1,6 +1,6 @@
 # Magento Patterns - Index
 
-> version: 1.3.0 | last_updated: 2026-08-18
+> version: 1.3.0 | last_updated: 2026-10-06
 >
 > File này là **index** — mỗi pattern chỉ ghi tên, khi nào dùng, và link reference chi tiết.
 > Khi implement pattern nào: **bắt buộc đọc reference tương ứng trước khi code**.
@@ -38,7 +38,9 @@
 | Data Patch | Seed dữ liệu mặc định, migration data | [core/data-schema-patch.md](./references/core/data-schema-patch.md) |
 | DI, Object Manager & Generated Code | Virtual type, injectable/newable, proxy, factory, regenerate, area config | [core/object-manager-generated.md](./references/core/object-manager-generated.md) |
 | AbstractModel & Collection | DataObject vs AbstractModel, magic getter, ResourceModel hooks | [core/model-collection-patterns.md](./references/core/model-collection-patterns.md) |
-| Advanced Patterns | Command pool, Strategy, Composite, Pipeline, PHP 8.x | [core/advanced-patterns.md](./references/core/advanced-patterns.md) |
+| Advanced Patterns | Pattern cấu trúc: Command pool, Strategy, Composite, Pipeline, Modifier, Validator chain, Specification, Decorator, Converter | [core/advanced-patterns.md](./references/core/advanced-patterns.md) |
+| PHP 8.x & Data Idioms | PHP 8 features trong Magento, Builder deep dive, Null Object, Registry legacy, Collection vs Repository, idempotent upsert | [core/php8-data-idioms.md](./references/core/php8-data-idioms.md) |
+| Custom Index Tables | Filter hot-path trên EAV chậm — bake điều kiện vào bảng index phẳng tự quản (observer + reindex command, event-driven không TTL, ~300x) | [core/custom-index-tables.md](./references/core/custom-index-tables.md) |
 | Multi-file Upload Normalization | Chuẩn hóa `$_FILES` transposed → per-file descriptors (service dùng chung) | [core/upload-files-normalization.md](./references/core/upload-files-normalization.md) |
 | Transaction + Side-effect Cleanup | DB transaction kèm track & dọn file media khi rollback; exception contract dọc call chain | [core/transaction-side-effect-cleanup.md](./references/core/transaction-side-effect-cleanup.md) |
 | Debugging & Troubleshooting | 500 error, WSOD, DI compile error, plugin conflict, memory leak | [core/debugging-troubleshooting.md](./references/core/debugging-troubleshooting.md) |
@@ -77,12 +79,17 @@
 | Admin UI Grid | Admin grid với filter/sort/action, mass actions, inline edit, bookmarks | [frontend/admin-ui-grid.md](./references/frontend/admin-ui-grid.md) |
 | Admin Form | Admin form với fieldset, dynamic rows, field dependencies | [frontend/admin-form.md](./references/frontend/admin-form.md) |
 | Admin Form Save and Continue | Admin form giữ lại trang edit sau save | [frontend/admin-save-and-continue.md](./references/frontend/admin-save-and-continue.md) |
+| UI Library — Form | Tham chiếu linh kiện nhập liệu cơ bản & lựa chọn: input/text/textarea, select/radioset, checkbox(set), multiselect, date, email, colorPicker | [frontend/ui-library-form.md](./references/frontend/ui-library-form.md) |
+| UI Library — Form Composite | Linh kiện phức tạp & media: dynamic rows, file/image uploader, WYSIWYG, urlInput, ui-select, multiline, insertForm, fieldset | [frontend/ui-library-form-composite.md](./references/frontend/ui-library-form-composite.md) |
+| UI Library — Grid | Tham chiếu linh kiện listing: cột, filters, toolbar, paging, inline edit, mass actions | [frontend/ui-library-grid.md](./references/frontend/ui-library-grid.md) |
+| UI Library — Shell | Linh kiện khung & kiến trúc: button, bookmarks, container, form/listing architecture, modal, tab | [frontend/ui-library-shell.md](./references/frontend/ui-library-shell.md) |
 | Checkout Steps | Custom checkout step, payment renderer, shipping renderer | [frontend/checkout-steps.md](./references/frontend/checkout-steps.md) |
 | LESS/CSS | Theme inheritance, _module.less, _extend.less, variables, mixins | [frontend/less-css.md](./references/frontend/less-css.md) |
 | Pager/Toolbar | Product list toolbar, sort, limit, custom sort option | [frontend/pager-toolbar.md](./references/frontend/pager-toolbar.md) |
 | Hyvä Theme | Alpine.js, Magewire, Tailwind CSS frontend | [frontend/hyva-theme.md](./references/frontend/hyva-theme.md) |
 | Luma Figma Theme | Workflow chuyển design Figma → Luma theme: tokens, BEM, QA gate, section module | [frontend/luma-figma-theme-docs-index.md](./references/frontend/luma-figma-theme-docs-index.md) |
 | Page Builder Content Type | Custom drag-and-drop content type cho PB editor | [frontend/pagebuilder-content-type.md](./references/frontend/pagebuilder-content-type.md) |
+| CMS Content Gotchas | WYSIWYG/directive không parse (`&quot;` entity), content rỗng im lặng do PCRE backtrack | [frontend/cms-content-gotchas.md](./references/frontend/cms-content-gotchas.md) |
 | Widget | Reusable CMS component cấu hình từ Admin | [frontend/widget.md](./references/frontend/widget.md) |
 
 ### Infrastructure & Ops
@@ -96,6 +103,7 @@
 | Storage (S3) | Upload/lưu file trên S3 | [infrastructure/storage-media.md](./references/infrastructure/storage-media.md) |
 | Search & Navigation | OpenSearch, layered nav | [infrastructure/search-navigation.md](./references/infrastructure/search-navigation.md) |
 | Logging | Custom logger, Monolog channel | [infrastructure/logging.md](./references/infrastructure/logging.md) |
+| Notification & Transactional Email | Kiến trúc channel-ownership: producer mỏng, registry fan-out, per-event config, email sau commit idempotent | [infrastructure/notification-transactional-email.md](./references/infrastructure/notification-transactional-email.md) |
 | Cron Job | Tác vụ định kỳ | [infrastructure/cron-jobs.md](./references/infrastructure/cron-jobs.md) |
 | Shipping Carrier | Custom shipping method | [infrastructure/shipping-carrier.md](./references/infrastructure/shipping-carrier.md) |
 | Import/Export | Custom import entity CSV | [infrastructure/import-export.md](./references/infrastructure/import-export.md) |
@@ -112,6 +120,9 @@
 | Static Analysis | PHPCS, PHPStan, PHP CS Fixer, GrumPHP | [ops/static-analysis.md](./references/ops/static-analysis.md) |
 | Tooling | Pestle, n98-magerun2, PHPStorm plugin, Makefile | [ops/tooling.md](./references/ops/tooling.md) |
 | Docker/DDEV | DDEV setup, markshust/docker-magento, CI/CD GitHub Actions | [ops/docker-ddev.md](./references/ops/docker-ddev.md) |
+| Docker Compose Multi-project | Nhiều stack Magento trên 1 host: container_name/ports unique, Cloudflare tunnel per-project, container runner test | [ops/docker-compose-multi-project.md](./references/ops/docker-compose-multi-project.md) |
+| Deploy Troubleshooting | Stale DI cache Redis sau deploy, schema drift playbook, destructive reset, restore DB → import + reindex | [ops/deploy-troubleshooting.md](./references/ops/deploy-troubleshooting.md) |
+| Web Server Config | Nginx bot filtering (map $is_bot), ModSecurity request body limit, phân biệt lỗi edge vs Magento (299-bytes 503) | [ops/web-server-config.md](./references/ops/web-server-config.md) |
 | Upgrade & Compatibility | UCT, cweagans patches, Composer versioning | [ops/upgrade.md](./references/ops/upgrade.md) |
 | Staging & Preview (Commerce) | Campaign timeline, scheduled updates, preview flow (Commerce only) | [ops/staging-preview-commerce.md](./references/ops/staging-preview-commerce.md) |
 
@@ -145,6 +156,8 @@
 | Reporting | Advanced reporting, grid report | [business/advanced-reporting.md](./references/business/advanced-reporting.md) |
 | B2B Modules | Company, shared catalog, negotiable quote, purchase order | [ops/b2b-modules.md](./references/ops/b2b-modules.md) |
 | Payment Integration — Laybyland (project) | Gotchas tích hợp payment thực tế (Laybyland/PaySquad) | [business/laybyland-payment-integration.md](./references/business/laybyland-payment-integration.md) |
+| Payment-first Checkout | Kiến trúc redirect/async gateway: attempt state machine, OrderFinalizer, IPN self-complete, recovery, email sau commit | [business/payment-first-checkout.md](./references/business/payment-first-checkout.md) |
+| Promotion / Flash Sale | Giá campaign runtime-fresh: 2-seam pricing (display + quote), quota ledger atomic, TTL-to-boundary cache | [business/promotion-flash-sale.md](./references/business/promotion-flash-sale.md) |
 
 ---
 

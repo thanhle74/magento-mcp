@@ -234,6 +234,32 @@ Nguồn:
 
 ---
 
+## 12. Gotchas custom API endpoint: đếm, cache, và UA từ proxy
+
+### `getSize()` đếm product, KHÔNG đếm SKU
+
+`$collection->getSize()` chạy `COUNT(DISTINCT e.entity_id)` — đếm **product** sau khi
+join/filter, không đếm **SKU khớp**. Pattern validate "tất cả SKU hợp lệ" kiểu
+`$collection->getSize() === count($skus)` sai ngầm khi SKU trùng product hoặc filter
+loại bớt row (case thật: sai 4/7 test case, không văng lỗi nào). Fix: bảng flat-index
+đếm chính xác per-SKU (xem [../core/custom-index-tables.md](../core/custom-index-tables.md))
+— và luôn viết unit test trước cho logic đếm kiểu này.
+
+### Endpoint validate-heavy cần cache ở app layer
+
+Resolver không cache = mỗi lượt cào/burst là 1 query thật xuống DB. Endpoint dạng validate
+gọi nhiều (vd `validateSkus` hàng chục nghìn lần/ngày): cache kết quả ở tầng app
+(LRU/Redis, TTL 15–30 phút) — chặn bot chỉ là lớp giảm nhiễu, không thay được cache.
+
+### Proxy/trusted middleware giữ nguyên UA client
+
+Proxy đáng tin (vd Shopify App Proxy) **preserve User-Agent/Referer của client cuối** và
+chỉ ký thêm HMAC — UA đến từ proxy vẫn là UA của bot. Kiểm soát bot/abuse ở **Nginx/edge
+layer**, không tin UA chỉ vì request đi qua middleware: xem
+[../ops/web-server-config.md](../ops/web-server-config.md) §1.
+
+---
+
 ## Liên kết
 
 - REST guide (PaaS vs SaaS): [`rest/overview.md`](./rest/overview.md)

@@ -95,6 +95,11 @@ $searchCriteria = $this->searchCriteriaBuilder
 | `finset` | `FIND_IN_SET(?, field)` | Tìm trong comma-separated |
 | `nfinset` | `NOT FIND_IN_SET(?, field)` | Không có trong set |
 
+> ⚠️ `finset`/`FIND_IN_SET` không dùng được index — **full scan** trên bảng lớn. Case
+> thực chiến: widget "Products by SKU" dùng `finset` trên attribute text 2.7M rows → 73
+> slow traces, sập FPM. Hotfix: cache block (`cache_lifetime` widget); fix gốc: bảng
+> flat-index (xem [custom-index-tables.md](./custom-index-tables.md)).
+
 ### Date range
 
 ```php
@@ -402,6 +407,36 @@ bin/magento setup:upgrade
 ```
 
 > **Zero-downtime migration:** Thêm column nullable trước, migrate data, rồi mới set NOT NULL. Không drop column trong cùng một deployment.
+
+---
+
+## 8. `addFieldToFilter` OR trên collection — parallel arrays, và mock không chứng minh SQL
+
+### OR filter hợp lệ trên AbstractDb collection = parallel arrays
+
+```php
+// ✅ ĐÚNG: (f1 AND c1) OR (f2 AND c2) — hai mảng song song
+$collection->addFieldToFilter(
+    ['app_trans_id', 'refund_state'],
+    [['eq' => $transId], ['eq' => 'confirmed_fail']]
+);
+
+// ❌ SAI: mảng kiểu EAV [['attribute' => ...], ...] trên flat collection
+//    → sinh SQL sai HOẶC filter bị bỏ im lặng (không exception để thấy)
+```
+
+### Mock collection không chứng minh shape SQL
+
+Unit test mock collection chỉ assert **method được gọi** — không chứng minh SQL sinh ra
+đúng (OR có thành SQL `OR` thật không, filter nào bị drop). Với query quyết định nghiệp
+vụ (vd chặn double-refund): dựng **integration test trên DB thật** — adapter PDO nối
+MariaDB throwaway, chạy repository verbatim, **assert SQL captured** qua từng scenario.
+
+### Gotcha scaffolding khi dựng test DB thật
+
+Model hydrate bằng empty-ctor (bypass `_construct`) thiếu `_idFieldName` → `getId()`
+trả `null` ngầm, assert dính lỗi sai entity thay vì lỗi query. Xem
+[model-collection-patterns.md](./model-collection-patterns.md) §6.1.
 
 ---
 
