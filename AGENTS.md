@@ -33,7 +33,7 @@ Magento 2.4.8-p5 / PHP 8.3 Central Reference Library. Repo này là **thư việ
 npm test
 ```
 
-Smoke test (`scripts/smoke-test.mjs`) kiểm: capabilities (tools + prompts), 5 tools, path traversal bị chặn, `isError` khi thiếu argument, đọc file core, search phủ `config/` + `examples/`, cảnh báo size cho file lớn, listing không còn file đã gộp/xóa, 3 prompts + xử lý argument/error.
+Smoke test (`scripts/smoke-test.mjs`) kiểm: capabilities (tools + prompts), 5 tools, path traversal bị chặn, `isError` khi thiếu argument, đọc file core, search phủ `config/` + `examples/`, size discipline (file reference lớn nhất ≤ 30KB), listing group kèm tóm tắt "dùng khi", `get_team_standards part=`, slice `offset`/`limit`, search multi-term AND + section-level fallback + `scope`, listing không còn file đã gộp/xóa, 3 prompts + xử lý argument/error.
 
 ## Kiểm tra link / orphan (index discipline)
 
@@ -47,11 +47,11 @@ npm run check:links
 
 | Tool | Mô tả |
 |---|---|
-| `get_team_standards` | Constitution + Checklist + Pattern index. |
-| `get_pattern_reference` | Reference chi tiết theo path (không truyền path → list tất cả). |
-| `search_standards` | Tìm keyword trong `config/` + `examples/`. |
+| `get_team_standards` | Constitution + Checklist + Pattern index. `part` chọn 1 file duy nhất. |
+| `get_pattern_reference` | Reference chi tiết theo path (không truyền path → list group theo area + tóm tắt "dùng khi"). `offset`/`limit` đọc slice. |
+| `search_standards` | Tìm keyword trong `config/` + `examples/` (multi-term AND, `scope`, kết quả kèm line + heading). |
 | `get_review_gate` | Checklist review trước khi báo done. |
-| `read_spec_file` | Đọc file bất kỳ trong repo. |
+| `read_spec_file` | Đọc file bất kỳ trong repo. `offset`/`limit` đọc slice file lớn. |
 
 ## MCP Prompts (slash commands)
 

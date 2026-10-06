@@ -46,7 +46,8 @@
 ## 3. Database
 
 - [ ] `etc/db_schema.xml` (không dùng InstallSchema; **không** đặt trong `Setup/`)
-- [ ] `etc/db_schema_whitelist.json`
+- [ ] `etc/db_schema_whitelist.json` — lưu ý tool sinh whitelist có thể dùng format khác repo (mảng `"name"` vs object): giữ nguyên format dự án, hand-add entry mới theo format sẵn có
+- [ ] Đổi schema module đã cài rồi: validate migration **tăng dần** (install BASE schema cũ → copy module mới → `setup:upgrade`) — không chỉ test fresh install; chạy `setup:upgrade` lần 2 phải pass (idempotent)
 - [ ] Tên bảng: `<vendor>_<module>_<entity>`
 - [ ] Data Patch cho seed data
 
@@ -73,6 +74,7 @@
 - [ ] `before` plugin: không `unset()` tham số trong return array
 - [ ] Observer chỉ làm 1 việc
 - [ ] Observer dùng `strpos()` để filter: kiểm tra method code có bị nhận nhầm không (ví dụ `laybyland_` bắt đầu bằng `layby`)
+- [ ] **Plugin global trên core model** (vd `QuoteManagement::placeOrder`): mọi dependency của plugin phải có binding — inject scalar thay vì `MethodInterface` chỉ để đọc code; dependency gateway-specific không được kéo vào interception của gateway khác (DI isolation — xem `references/security/payment-gateway.md` §18); có DI binding test + runtime smoke (`setup:di:compile` không bắt được thiếu `<preference>`)
 
 ## 7. Config (`system.xml`)
 
@@ -124,6 +126,9 @@
 - [ ] **Attribute/field do admin định nghĩa runtime**: ưu tiên bảng definition + value; **không** add/drop cột `sales_order` (hoặc bảng core) theo từng attribute
 - [ ] **GraphQL tách module** (optional): resolver-only module phụ thuộc core; core vẫn chạy khi disable GraphQL module
 - [ ] **Hard delete có cascade**: transaction + confirm admin; soft delete mặc định nếu nghiệp vụ cần
+- [ ] **di.xml + interface gotchas** (đã gây install/compile fail thật): `xsi:type="integer"` **không tồn tại** — dùng `number`; interface mới inject vào service → bắt buộc `<preference>` (thiếu = "Cannot instantiate interface" runtime); test XPath vào di.xml query node `virtualType` khi facade là virtualType, không phải `type`
+- [ ] **Sales API method reality**: `Magento\Sales\Api\CreditmemoInterface` không tồn tại (dùng `Api\Data\...`); `InvoiceInterface` không có `getId()` (chỉ `getEntityId()`); `CreditmemoInterface` không khai báo `getInvoice()` — mock concrete model khi cần
+- [ ] **Baseline test discipline**: FAIL pre-existing (module third-party) không tính vào kết quả của mình nhưng phải chứng minh độc lập (chạy trước khi đổi code); sau rename module/table luôn có checklist migrate data cũ trước khi kết luận "không có dữ liệu"
 
 ## 12. Review gate (trước khi báo task/feature done)
 
@@ -153,7 +158,7 @@
 - [ ] Module có response/DTO cache tự build: invalidation phủ **mọi nguồn dữ liệu** đi vào
   entry (product, pricing, MSI stock qua `clean_cache_by_tags`, url_rewrite, config, CMS);
   nguồn không chứng minh được → TTL có giới hạn + ghi rõ tradeoff (xem
-  `references/infrastructure/cache-management.md` §10)
+  `references/infrastructure/cache-management.md` §11)
 - [ ] Gọi `CacheInterface::clean()` luôn truyền **mảng tag thuần** (hợp đồng
   `App\Cache\Proxy`) — cấm cú pháp Zend `clean($mode, $tags)`
 - [ ] Unit test dùng fixture đúng **dạng persisted thực** (category path `1/<root>/<child>`,

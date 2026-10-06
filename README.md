@@ -48,11 +48,11 @@ claude mcp add magento-spec -s user -- node /path/to/spec/src/index.js
 
 | Tool | Mô tả |
 |---|---|
-| `get_team_standards` | Nạp nhanh Constitution, Checklist & Pattern index. |
-| `get_pattern_reference` | Lấy chi tiết mẫu code theo tên (VD: `core/plugin-patterns.md`). Không truyền path → list tất cả references. |
-| `search_standards` | Tìm kiếm chuẩn/quy tắc/blueprint theo từ khóa trong `config/` + `examples/`. |
+| `get_team_standards` | Nạp nhanh Constitution, Checklist & Pattern index. Truyền `part` (`constitution`\|`checklist`\|`patterns`) để nạp 1 file duy nhất. |
+| `get_pattern_reference` | Lấy chi tiết mẫu code theo tên (VD: `core/plugin-patterns.md`). Không truyền path → list tất cả references (group theo area, kèm tóm tắt "dùng khi"). File lớn đọc slice bằng `offset`/`limit`. |
+| `search_standards` | Tìm kiếm chuẩn/quy tắc/blueprint theo từ khóa trong `config/` + `examples/`. Nhiều từ khóa = AND; `"..."` cho exact phrase; `scope` thu hẹp vùng quét (`references`\|`config`\|`examples`). Kết quả group theo file, kèm số dòng + heading gần nhất để đọc tiếp bằng `offset`. |
 | `get_review_gate` | Nạp checklist kiểm tra chất lượng code trước khi hoàn thành. |
-| `read_spec_file` | Đọc bất kỳ file tài liệu nào trong repo (`config/`, `examples/`, ...). |
+| `read_spec_file` | Đọc bất kỳ file tài liệu nào trong repo (`config/`, `examples/`, ...). File lớn đọc slice bằng `offset`/`limit` (1-based). |
 
 ---
 
